@@ -1,0 +1,41 @@
+<script>
+    require([
+        'jquery',
+        'prototype'
+    ], function($){
+        $('#<?=$block->getId();?>').click(function () {
+            var token = $('#sales_channels_gento_tangotiendas_api_token').val()
+            var params = {
+                token:token
+            };
+            $('.tangotiendas_status_result').hide();
+            new Ajax.Request('<?php echo $block->getAjaxUrl(); ?>', {
+                parameters: params,
+                loaderArea: false,
+                asynchronous: true,
+                onSuccess: function(response) {
+                    var rta = response.responseJSON;
+                    var status  = rta.status;
+                    var message = status.Message;
+                    if(status.isOk){
+                        $('.tangotiendas_status_result.success').show();
+                    } else {
+                        $('.tangotiendas_status_result.error').show();
+                    }
+
+                    $('.tangotiendas_status_result.result').html(message).show();
+                    console.log(response);
+                    $('.tangotiendas_status_result.response').html(JSON.stringify(status)).show();
+                }
+            });
+        });
+
+    });
+</script>
+<?=$block->getButtonHtml();?>
+<span id="tangotiendas_status">
+    <div class="tangotiendas_status_result success message message-success success" style="display: none;"><?=__('Success');?></div>
+    <div class="tangotiendas_status_result error message message-error error" style="display: none;"><?=__('Error');?></div>
+    <div class="tangotiendas_status_result result message message-notice notice" style="display: none;"></div>
+    <pre class="tangotiendas_status_result response" style="display: none;"></pre>
+</span>
