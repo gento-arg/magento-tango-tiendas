@@ -3,6 +3,7 @@ declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Model\Cron\Stock;
 
+use Gento\TangoTiendas\Logger\Logger;
 use Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -10,7 +11,6 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
 use TangoTiendas\Service\StocksFactory;
 
 class Sync
@@ -67,7 +67,7 @@ class Sync
         StockItemInterfaceFactory $stockItemFactory,
         ScopeConfigInterface $scopeConfigInterface,
         StoreManagerInterface $storeManager,
-        LoggerInterface $logger
+        Logger $logger
     ) {
         $this->stocksServiceFactory = $stocksServiceFactory;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
@@ -103,6 +103,8 @@ class Sync
             }
         }
 
+        $this->logger->info(__('Tokens finded: %1', count($tokens)));
+
         $response = [];
         $step = 1;
         foreach ($tokens as $token) {
@@ -110,6 +112,9 @@ class Sync
             $service = $this->stocksServiceFactory->create([
                 'accessToken' => $token,
             ]);
+
+            $this->logger->info(__('Proccesing token: %1', $this->getMaskedToken($token)));
+
             $updated = $proccesed = 0;
             try {
                 /** @var \TangoTiendas\Model\PagingResult $data */
@@ -124,6 +129,11 @@ class Sync
 
                         $productList = $this->productRepository->getList($searchCriteria);
                         if ($productList->getTotalCount() == 0) {
+                            $this->logger->info(__('Unknow sku: %1', $item->getSKUCode()));
+                            continue;
+                        }
+                        if ($productList->getTotalCount() > 1) {
+                            $this->logger->warning(__('Multiple products with sku: %1', $item->getSKUCode()));
                             continue;
                         }
 
@@ -136,6 +146,8 @@ class Sync
 
                         /** @var \Magento\Inventory\Model\Stock $productStock */
                         $this->stockRegistry->updateStockItemBySku($product->getSku(), $stockItem);
+                        $this->logger->info(__('New stock sku: %1 %2', $product->getSku(), $item->getQuantity()));
+
                         $updated++;
                     }
                     if ($data->hasMoreData()) {
@@ -152,6 +164,11 @@ class Sync
             }
         }
         return $response;
+    }
+
+    private function getMaskedToken($token)
+    {
+        return $token;
     }
 
     private function getConfig($path, $websiteId)

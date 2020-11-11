@@ -11,8 +11,14 @@
             $('.tangotiendas_status_result').hide();
             new Ajax.Request('<?php echo $block->getAjaxUrl(); ?>', {
                 parameters: params,
-                loaderArea: false,
+                loaderArea: 'html-body',
                 asynchronous: true,
+                onComplete: function(response) {
+                    if(response.status != 200){
+                        $('.tangotiendas_status_result.error').show();
+                        $('.tangotiendas_status_result.response').html(response.responseText).show();
+                    }
+                },
                 onSuccess: function(response) {
                     var rta = response.responseJSON;
                     var status  = rta.status;
@@ -24,7 +30,6 @@
                     }
 
                     $('.tangotiendas_status_result.result').html(message).show();
-                    console.log(response);
                     $('.tangotiendas_status_result.response').html(JSON.stringify(status)).show();
                 }
             });

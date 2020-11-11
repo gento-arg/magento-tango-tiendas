@@ -36,6 +36,13 @@
                         <field id="*/*/active">1</field>
                     </depends>
                 </field>
+                <field id="guest_id" translate="label" type="text" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Guest customer ID</label>
+                    <comment>Tango customer ID for guest customer</comment>
+                    <depends>
+                        <field id="*/*/active">1</field>
+                    </depends>
+                </field>
                 <group id="import_stock" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Scheduled Import Stock Settings</label>
                     <field id="enabled" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">

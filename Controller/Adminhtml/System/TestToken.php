@@ -38,6 +38,7 @@ class TestToken extends Action
     public function execute()
     {
         $success = true;
+        $status = '';
         try {
             $token = $this->getRequest()->getParam('token');
 
@@ -48,6 +49,7 @@ class TestToken extends Action
             $status = $storeService->getStatus();
         } catch (\Exception $e) {
             $success = false;
+            $status = $e->getMessage();
             $this->logger->critical($e);
         }
 

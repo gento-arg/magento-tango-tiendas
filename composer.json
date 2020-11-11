@@ -10,7 +10,9 @@
         "php": "~7.3.0||~7.4.0",
         "magento/framework": "*",
         "magento/module-store": "*",
-        "gento-arg/tango-tiendas-sdk-php": "*"
+        "gento-arg/tango-tiendas-sdk-php": "*",
+        "mugar/module-argentina-regions": "*",
+        "mugar/module-customer-identification-document": "*"
     },
     "autoload": {
         "psr-4": {

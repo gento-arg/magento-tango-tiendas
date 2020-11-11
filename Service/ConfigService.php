@@ -7,6 +7,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 class ConfigService
 {
     public const CONFIG_API_TOKEN = 'api_token';
+    public const CONFIG_GUEST_ID = 'guest_id';
 
     /**
      * @var ScopeConfigInterface
@@ -24,8 +25,14 @@ class ConfigService
         return trim($this->getConfig(self::CONFIG_API_TOKEN));
     }
 
+    public function getCustomerGuestId()
+    {
+        return $this->getConfig(self::CONFIG_GUEST_ID);
+    }
+
     private function getConfig($path)
     {
         return $this->scopeConfig->getValue('sales_channels/gento_tangotiendas/' . $path);
     }
+
 }
