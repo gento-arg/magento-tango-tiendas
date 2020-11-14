@@ -26,4 +26,8 @@
             </argument>
         </arguments>
     </type>
+
+    <type name="Magento\Sales\Api\Data\OrderInterface">
+        <plugin name="gentoTangoTiendasOrderItemTangoSku" type="Gento\TangoTiendas\Plugin\Model\OrderPlugin" />
+    </type>
 </config>

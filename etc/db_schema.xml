@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="sales_order_item" resource="default">
+        <column xsi:type="text" name="tango_sku" nullable="true" comment="SKU del producto en tango" />
+    </table>
+    <table name="sales_invoice_item" resource="default">
+        <column xsi:type="text" name="tango_sku" nullable="true" comment="SKU del producto en tango" />
+    </table>
+    <table name="sales_creditmemo_item" resource="default">
+        <column xsi:type="text" name="tango_sku" nullable="true" comment="SKU del producto en tango" />
+    </table>
+</schema>

@@ -1,0 +1,22 @@
+{
+    "sales_order_item": {
+        "column": {
+            "tango_sku": true
+        }
+    },
+    "sales_invoice_item": {
+        "column": {
+            "tango_sku": true
+        }
+    },
+    "sales_creditmemo_item": {
+        "column": {
+            "tango_sku": true
+        }
+    },
+    "cid_types": {
+        "column": {
+            "tango_code": true
+        }
+    }
+}
