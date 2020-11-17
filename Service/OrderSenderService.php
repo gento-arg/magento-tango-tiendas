@@ -3,7 +3,9 @@
 namespace Gento\TangoTiendas\Service;
 
 use Gento\TangoTiendas\Logger\Logger;
+use Gento\TangoTiendas\Model\ParseException;
 use Gento\TangoTiendas\Service\ConfigService;
+use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Sales\Model\Order;
 use Mugar\CustomerIdentificationDocument\Api\Data\CidFieldsInterface;
 use TangoTiendas\Model\CustomerFactory;
@@ -38,6 +40,11 @@ class OrderSenderService
      */
     protected $logger;
 
+    /**
+     * @var string[]
+     */
+    protected $traceMessages = [];
+
     public function __construct(
         OrdersServiceFactory $ordersServiceFactory,
         OrderFactory $orderFactory,
@@ -63,14 +70,28 @@ class OrderSenderService
 
         $this->logger->info(__('Order created: %1', $order->getIncrementId()));
 
+        $message = '';
         try {
             $orderModel = $this->getOrderModel($order);
+            if ($orderModel->getTotal() != $order->getGrandTotal()) {
+                throw new ParseException(__('El monto a informar difiere del pedido'));
+            }
             $this->logger->info(json_encode($orderModel->jsonSerialize(), JSON_PRETTY_PRINT));
             $notification = $orderService->sendOrder($orderModel);
-            var_dump($notification);
+            $message = $notification->getMessage();
+            $this->logger->info(var_export($notification, true));
         } catch (\Throwable $e) {
             $this->logger->error($e->getMessage());
+            $message = $e->getMessage();
         }
+
+        $message = sprintf('TangoTiendas: %s', $message);
+
+        if (count($this->traceMessages) > 0) {
+            $message = sprintf("%s\n\nAdditional information: \n%s", $message, implode(PHP_EOL, $this->traceMessages));
+        }
+
+        $order->addCommentToStatusHistory($message);
     }
 
     /**
@@ -88,8 +109,12 @@ class OrderSenderService
         ;
 
         foreach ($order->getItems() as $orderItem) {
-            if (!$orderItem->getTangoSku()) {
+            if ($orderItem->getProductType() == Configurable::TYPE_CODE) {
                 continue;
+            }
+
+            if (!$orderItem->getTangoSku()) {
+                $this->traceMessages[] = __('TangoTiendas: Producto sin Tango SKU %1', $orderItem->getSku());
             }
 
             /** @var \TangoTiendas\Model\OrderItem  $orderItemModel */
