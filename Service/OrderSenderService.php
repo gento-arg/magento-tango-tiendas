@@ -141,8 +141,8 @@ class OrderSenderService
      */
     private function getCustomerModel(Order $order)
     {
-        // $customerId = $order->getCustomerId();
-        $customerId = null;
+        // $customerCode = $order->getCustomerTangoCode();
+        $customerCode = null;
 
         $user = sprintf('%s - %s, %s',
             $order->getCustomerIsGuest() ? __('Invitado') : __('Cliente'),
@@ -151,7 +151,7 @@ class OrderSenderService
         );
 
         if ($order->getCustomerIsGuest()) {
-            $customerId = $this->configService->getCustomerGuestId();
+            $customerCode = $this->configService->getCustomerGuestId();
         }
 
         $documentType = $order->getData(CidFieldsInterface::SHIPPING_CID_TYPE);
@@ -163,7 +163,8 @@ class OrderSenderService
 
         /** @var \TangoTiendas\Model\Customer $customerModel */
         $customerModel = $this->customerFactory->create();
-        $customerModel->setCustomerId((int) $customerId)
+        $customerModel->setCustomerId((int) 1)
+            ->setCode($customerCode)
             ->setDocumentType($documentType)
             ->setDocumentNumber($order->getData(CidFieldsInterface::SHIPPING_CID_NUMBER))
         // TODO Cambiar esto a dinamico
