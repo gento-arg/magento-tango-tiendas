@@ -11,6 +11,7 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use TangoTiendas\Service\ProductsFactory;
 use TangoTiendas\Service\StocksFactory;
 
 class Sync
@@ -23,6 +24,11 @@ class Sync
      * @var StocksFactory
      */
     protected $stocksServiceFactory;
+
+    /**
+     * @var ProductsFactory
+     */
+    protected $productServiceFactory;
 
     /**
      * @var SearchCriteriaBuilder
@@ -61,6 +67,7 @@ class Sync
 
     public function __construct(
         StocksFactory $stocksServiceFactory,
+        ProductsFactory $productServiceFactory,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         ProductRepositoryInterface $productRepository,
         StockRegistryInterface $stockRegistry,
@@ -70,6 +77,7 @@ class Sync
         Logger $logger
     ) {
         $this->stocksServiceFactory = $stocksServiceFactory;
+        $this->productServiceFactory = $productServiceFactory;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->productRepository = $productRepository;
         $this->stockRegistry = $stockRegistry;
@@ -107,22 +115,39 @@ class Sync
 
         $response = [];
         $step = 1;
-        foreach ($tokens as $token) {
+        foreach ($tokens as $tokenNumber => $token) {
+            $this->logger->info(__('Processing token %1', $tokenNumber + 1));
+
             /** @var \TangoTiendas\Service\Stocks $service */
             $service = $this->stocksServiceFactory->create([
                 'accessToken' => $token,
             ]);
 
-            $this->logger->info(__('Proccesing token: %1', $this->getMaskedToken($token)));
+            /**
+             * $kits = [
+             *  'SKU of Kit' =>[
+             *      'SKU Component 1' => 'Qty 1',
+             *      'SKU Component 2' => 'Qty 2',
+             *  ]
+             * ]
+             */
+            $kits = $this->getParsedKits($token);
+
+            $baseStock = [];
 
             $updated = $proccesed = 0;
+            $page = 1;
+
             try {
                 /** @var \TangoTiendas\Model\PagingResult $data */
-                $data = $service->getList();
+                $data = $service->getList(500, $page++);
                 do {
                     /** @var \TangoTiendas\Model\Stock $item */
                     foreach ($data->getData() as $item) {
                         $proccesed++;
+
+                        $baseStock[$item->getSKUCode()] = $item->getQuantity();
+
                         $searchCriteria = $this->searchCriteriaBuilder
                             ->addFilter('tango_sku', $item->getSKUCode())
                             ->create();
@@ -142,6 +167,7 @@ class Sync
                         $product = array_pop($producList);
 
                         $stockItem = $this->stockItemFactory->create();
+                        $stockItem->setIsInStock($item->getQuantity() > 0);
                         $stockItem->setQty($item->getQuantity());
 
                         /** @var \Magento\Inventory\Model\Stock $productStock */
@@ -150,17 +176,84 @@ class Sync
 
                         $updated++;
                     }
-                    if ($data->hasMoreData()) {
-                        $data = $service->getList();
-                    }
                 } while ($data->hasMoreData());
             } catch (\Throwable $th) {
                 $this->logger->critical($th->getMessage());
                 $response[$step] = __('Error: %1', $th->getMessage());
             }
 
+            $kitsStock = [];
+            foreach ($kits as $kitSku => $kitQtys) {
+                $stock = null;
+
+                // Eval every component for the current kit
+                foreach ($kitQtys as $componentSku => $qtyRequired) {
+                    if ($qtyRequired < 0) {
+                        $this->logger->error(__('Invalid qty for kit %1', $kitSku));
+                        break;
+                    }
+
+                    // If the component doesnt exist on baseStock will be 0 available
+                    $componentQty = $baseStock[$componentSku] ?? 0;
+
+                    // If the required qty is greater than the current stock will be 0 available
+                    if ($qtyRequired > $componentQty) {
+                        $stock = 0;
+                        break;
+                    }
+
+                    // The real availability for this component will be stock / required
+                    $componentQty = $componentQty / $qtyRequired;
+
+                    // First time
+                    if ($stock === null) {
+                        $stock = $componentQty;
+                    }
+
+                    // The stock will be the min between every component stock
+                    $stock = min($stock, $componentQty);
+                }
+
+                $kitsStock[$kitSku] = $stock;
+            }
+            unset($baseStock);
+
+            foreach ($kitsStock as $kitSku => $qty) {
+                $proccesed++;
+
+                $searchCriteria = $this->searchCriteriaBuilder
+                    ->addFilter('tango_sku', $kitSku)
+                    ->create();
+
+                $productList = $this->productRepository->getList($searchCriteria);
+                if ($productList->getTotalCount() == 0) {
+                    $this->logger->info(__('Unknow sku: %1', $kitSku));
+                    continue;
+                }
+
+                if ($productList->getTotalCount() > 1) {
+                    $this->logger->warning(__('Multiple products with sku: %1', $kitSku));
+                    continue;
+                }
+
+                $producList = $productList->getItems();
+
+                $product = array_pop($producList);
+
+                $stockItem = $this->stockItemFactory->create();
+                $stockItem->setIsInStock($qty > 0);
+                $stockItem->setQty($qty);
+
+                /** @var \Magento\Inventory\Model\Stock $productStock */
+                $this->stockRegistry->updateStockItemBySku($product->getSku(), $stockItem);
+                $this->logger->info(__('New stock sku: %1 %2', $product->getSku(), $qty));
+
+                $updated++;
+            }
+
             if ($proccesed > 0) {
-                $response[$step] = __('Processed/Updated: %1/%s', $proccesed, $updated);
+                $response[$step] = __('Processed/Updated: %1/%2', $proccesed, $updated);
+                $this->logger->info($response[$step]);
             }
         }
         return $response;
@@ -174,5 +267,40 @@ class Sync
     private function getConfig($path, $websiteId)
     {
         return $this->scopeConfig->getValue($path, ScopeInterface::SCOPE_WEBSITE, $websiteId);
+    }
+
+    protected function getParsedKits($token)
+    {
+        /** @var \TangoTiendas\Service\Products $service */
+        $service = $this->productServiceFactory->create([
+            'accessToken' => $token,
+        ]);
+
+        $kits = [];
+        $page = 1;
+        do {
+            /** @var \TangoTiendas\Model\PagingResult $result */
+            $result = $service->getList(500, $page);
+            foreach ($result->getData() as /** @var \TangoTiendas\Model\Product */$kitItem) {
+                if (!$kitItem->isKit()) {
+                    continue;
+                }
+                array_map(function ($row) use (&$kits, $kitItem) {
+                    $componentSku = $row->getComponentSKUCode();
+                    $kitSku = $kitItem->getSKUCode();
+                    $qty = $row->getQuantity();
+
+                    if (!isset($kits[$kitSku])) {
+                        $kits[$kitSku] = [];
+                    }
+
+                    $kits[$kitSku][$componentSku] = $qty;
+                }, $kitItem->getProductComposition());
+            }
+
+            $page++;
+        } while ($result->hasMoreData());
+
+        return $kits;
     }
 }
