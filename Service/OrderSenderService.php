@@ -129,6 +129,7 @@ class OrderSenderService
                 ->setDescription($orderItem->getName())
                 ->setDiscountPercentage($orderItem->getDiscountPercent())
             ;
+            die();
 
             $orderModel->addOrderItem($orderItemModel);
         }

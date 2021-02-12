@@ -16,9 +16,9 @@ use TangoTiendas\Service\StocksFactory;
 
 class Sync
 {
-    const CONFIG_TOKEN_PATH = 'sales_channels/gento_tangotiendas/api_token';
-    const CONFIG_ACTIVE_PATH = 'sales_channels/gento_tangotiendas/active';
-    const CONFIG_STOCK_ENABLE_PATH = 'sales_channels/gento_tangotiendas/import_stock/enabled';
+    const CONFIG_TOKEN_PATH = 'tango/gento_tangotiendas/api_token';
+    const CONFIG_ACTIVE_PATH = 'tango/gento_tangotiendas/active';
+    const CONFIG_STOCK_ENABLE_PATH = 'tango/gento_tangotiendas/import_stock/enabled';
 
     /**
      * @var StocksFactory
