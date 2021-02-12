@@ -108,7 +108,12 @@ class OrderSenderService
             ->setOrderNumber($order->getIncrementId())
         ;
 
-        foreach ($order->getItems() as $orderItem) {
+        foreach ($order->getAllVisibleItems() as /** @var \Magento\Sales\Model\Order\Item */$orderItem) {
+            $parentItem = $orderItem;
+            if ($orderItem->getParentItem()) {
+                $parentItem = $orderItem->getParentItem();
+            }
+
             if ($orderItem->getProductType() == Configurable::TYPE_CODE) {
                 continue;
             }
@@ -125,11 +130,10 @@ class OrderSenderService
                 ->setProductCode($orderItem->getSku())
                 ->setSKUCode($orderItem->getTangoSku())
                 ->setQuantity($orderItem->getQtyOrdered())
-                ->setUnitPrice($orderItem->getPrice())
+                ->setUnitPrice($parentItem->getPrice())
                 ->setDescription($orderItem->getName())
                 ->setDiscountPercentage($orderItem->getDiscountPercent())
             ;
-            die();
 
             $orderModel->addOrderItem($orderItemModel);
         }
