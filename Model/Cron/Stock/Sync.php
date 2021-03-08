@@ -5,7 +5,6 @@ namespace Gento\TangoTiendas\Model\Cron\Stock;
 
 use Gento\TangoTiendas\Logger\Logger;
 use Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory;
-use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -13,6 +12,8 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use TangoTiendas\Service\ProductsFactory;
 use TangoTiendas\Service\StocksFactory;
+use Magento\InventoryApi\Api\SourceItemsSaveInterface;
+use Magento\InventoryApi\Api\Data\SourceItemInterfaceFactory;
 
 class Sync
 {
@@ -41,16 +42,6 @@ class Sync
     protected $productRepository;
 
     /**
-     * @var StockRegistryInterface
-     */
-    protected $stockRegistry;
-
-    /**
-     * @var StockItemInterfaceFactory
-     */
-    protected $stockItemFactory;
-
-    /**
      * @var ScopeConfigInterface
      */
     protected $scopeConfig;
@@ -70,8 +61,8 @@ class Sync
         ProductsFactory $productServiceFactory,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         ProductRepositoryInterface $productRepository,
-        StockRegistryInterface $stockRegistry,
-        StockItemInterfaceFactory $stockItemFactory,
+        SourceItemsSaveInterface $sourceItemsSaveInterface,
+        SourceItemInterfaceFactory $sourceItemFactory,
         ScopeConfigInterface $scopeConfigInterface,
         StoreManagerInterface $storeManager,
         Logger $logger
@@ -80,8 +71,8 @@ class Sync
         $this->productServiceFactory = $productServiceFactory;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->productRepository = $productRepository;
-        $this->stockRegistry = $stockRegistry;
-        $this->stockItemFactory = $stockItemFactory;
+        $this->sourceItemsSaveInterface = $sourceItemsSaveInterface;
+        $this->sourceItemFactory = $sourceItemFactory;
         $this->scopeConfig = $scopeConfigInterface;
         $this->storeManager = $storeManager;
         $this->logger = $logger;
@@ -166,12 +157,13 @@ class Sync
 
                         $product = array_pop($producList);
 
-                        $stockItem = $this->stockItemFactory->create();
-                        $stockItem->setIsInStock($item->getQuantity() > 0);
-                        $stockItem->setQty($item->getQuantity());
+                        $sourceItem = $this->sourceItemFactory->create();
+                        $sourceItem->setSourceCode('default');
+                        $sourceItem->setSku($item->getSKUCode());
+                        $sourceItem->setQuantity($item->getQuantity());
+                        $sourceItem->setStatus((int)($item->getQuantity() > 0));
+                        $this->sourceItemsSaveInterface->execute([$sourceItem]);
 
-                        /** @var \Magento\Inventory\Model\Stock $productStock */
-                        $this->stockRegistry->updateStockItemBySku($product->getSku(), $stockItem);
                         $this->logger->info(__('New stock sku: %1 %2', $product->getSku(), $item->getQuantity()));
 
                         $updated++;
@@ -240,12 +232,12 @@ class Sync
 
                 $product = array_pop($producList);
 
-                $stockItem = $this->stockItemFactory->create();
-                $stockItem->setIsInStock($qty > 0);
-                $stockItem->setQty($qty);
-
-                /** @var \Magento\Inventory\Model\Stock $productStock */
-                $this->stockRegistry->updateStockItemBySku($product->getSku(), $stockItem);
+                $sourceItem = $this->sourceItemFactory->create();
+                $sourceItem->setSourceCode('default');
+                $sourceItem->setSku($product->getSku());
+                $sourceItem->setQuantity($qty);
+                $sourceItem->setStatus((int)($qty > 0));
+                $this->sourceItemsSaveInterface->execute([$sourceItem]);
                 $this->logger->info(__('New stock sku: %1 %2', $product->getSku(), $qty));
 
                 $updated++;
