@@ -5,7 +5,7 @@ namespace Gento\TangoTiendas\Model\Cron\Stock;
 
 use Gento\TangoTiendas\Logger\Logger;
 use Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory;
-use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Api\ProductRepositoryInterfaceFactory;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
@@ -37,9 +37,9 @@ class Sync
     protected $searchCriteriaBuilder;
 
     /**
-     * @var ProductRepositoryInterface
+     * @var productRepositoryInterfaceFactory
      */
-    protected $productRepository;
+    protected $productRepositoryFactory;
 
     /**
      * @var ScopeConfigInterface
@@ -60,7 +60,7 @@ class Sync
         StocksFactory $stocksServiceFactory,
         ProductsFactory $productServiceFactory,
         SearchCriteriaBuilder $searchCriteriaBuilder,
-        ProductRepositoryInterface $productRepository,
+        productRepositoryInterfaceFactory $productRepositoryFactory,
         SourceItemsSaveInterface $sourceItemsSaveInterface,
         SourceItemInterfaceFactory $sourceItemFactory,
         ScopeConfigInterface $scopeConfigInterface,
@@ -70,7 +70,7 @@ class Sync
         $this->stocksServiceFactory = $stocksServiceFactory;
         $this->productServiceFactory = $productServiceFactory;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
-        $this->productRepository = $productRepository;
+        $this->productRepositoryFactory = $productRepositoryFactory;
         $this->sourceItemsSaveInterface = $sourceItemsSaveInterface;
         $this->sourceItemFactory = $sourceItemFactory;
         $this->scopeConfig = $scopeConfigInterface;
@@ -103,6 +103,7 @@ class Sync
         }
 
         $this->logger->info(__('Tokens finded: %1', count($tokens)));
+        $productRepository = $this->productRepositoryFactory->create();
 
         $response = [];
         $step = 1;
@@ -143,7 +144,7 @@ class Sync
                             ->addFilter('tango_sku', $item->getSKUCode())
                             ->create();
 
-                        $productList = $this->productRepository->getList($searchCriteria);
+                        $productList = $productRepository->getList($searchCriteria);
                         if ($productList->getTotalCount() == 0) {
                             $this->logger->info(__('Unknow sku: %1', $item->getSKUCode()));
                             continue;
@@ -217,7 +218,7 @@ class Sync
                     ->addFilter('tango_sku', $kitSku)
                     ->create();
 
-                $productList = $this->productRepository->getList($searchCriteria);
+                $productList = $productRepositoryFactory->getList($searchCriteria);
                 if ($productList->getTotalCount() == 0) {
                     $this->logger->info(__('Unknow sku: %1', $kitSku));
                     continue;
