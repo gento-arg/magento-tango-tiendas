@@ -18,5 +18,10 @@
         "column": {
             "tango_code": true
         }
+    },
+    "customer_group": {
+        "column": {
+            "tango_id": true
+        }
     }
 }

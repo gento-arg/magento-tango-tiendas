@@ -40,6 +40,10 @@ class Warehouses implements OptionSourceInterface
     {
         $opts = [];
         try {
+            if (!$this->configService->getApiToken()) {
+                return $opts;
+            }
+
             /** @var \TangoTiendas\Service\Warehouse $warehouseService */
             $warehouseService = $this->warehouseServiceFactory->create([
                 'accessToken' => $this->configService->getApiToken(),

@@ -40,6 +40,9 @@ class Stores implements OptionSourceInterface
     {
         $opts = [];
         try {
+            if (!$this->configService->getApiToken()) {
+                return $opts;
+            }
             /** @var \TangoTiendas\Service\Stores $storeService */
             $storeService = $this->storesServiceFactory->create([
                 'accessToken' => $this->configService->getApiToken(),

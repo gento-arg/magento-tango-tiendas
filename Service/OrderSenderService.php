@@ -4,7 +4,6 @@ namespace Gento\TangoTiendas\Service;
 
 use Gento\TangoTiendas\Logger\Logger;
 use Gento\TangoTiendas\Model\ParseException;
-use Gento\TangoTiendas\Service\ConfigService;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Sales\Model\Order;
 use Mugar\CustomerIdentificationDocument\Api\Data\CidFieldsInterface;
@@ -105,10 +104,14 @@ class OrderSenderService
         $orderModel->setCustomer($customerModel)
             ->setDate($order->getCreatedAt())
             ->setOrderID($order->getIncrementId())
-            ->setOrderNumber($order->getIncrementId())
-        ;
+            ->setOrderNumber($order->getIncrementId());
 
-        foreach ($order->getItems() as $orderItem) {
+        foreach ($order->getAllVisibleItems() as /** @var \Magento\Sales\Model\Order\Item */ $orderItem) {
+            $parentItem = $orderItem;
+            if ($orderItem->getParentItem()) {
+                $parentItem = $orderItem->getParentItem();
+            }
+
             if ($orderItem->getProductType() == Configurable::TYPE_CODE) {
                 continue;
             }
@@ -117,7 +120,7 @@ class OrderSenderService
                 $this->traceMessages[] = __('TangoTiendas: Producto sin Tango SKU %1', $orderItem->getSku());
             }
 
-            /** @var \TangoTiendas\Model\OrderItem  $orderItemModel */
+            /** @var \TangoTiendas\Model\OrderItem $orderItemModel */
             $orderItemModel = $this->orderItemFactory
                 ->create();
 
@@ -125,10 +128,9 @@ class OrderSenderService
                 ->setProductCode($orderItem->getSku())
                 ->setSKUCode($orderItem->getTangoSku())
                 ->setQuantity($orderItem->getQtyOrdered())
-                ->setUnitPrice($orderItem->getPrice())
+                ->setUnitPrice($parentItem->getPrice())
                 ->setDescription($orderItem->getName())
-                ->setDiscountPercentage($orderItem->getDiscountPercent())
-            ;
+                ->setDiscountPercentage($orderItem->getDiscountPercent());
 
             $orderModel->addOrderItem($orderItemModel);
         }
@@ -141,8 +143,8 @@ class OrderSenderService
      */
     private function getCustomerModel(Order $order)
     {
-        // $customerId = $order->getCustomerId();
-        $customerId = null;
+        // $customerCode = $order->getCustomerTangoCode();
+        $customerCode = null;
 
         $user = sprintf('%s - %s, %s',
             $order->getCustomerIsGuest() ? __('Invitado') : __('Cliente'),
@@ -151,7 +153,7 @@ class OrderSenderService
         );
 
         if ($order->getCustomerIsGuest()) {
-            $customerId = $this->configService->getCustomerGuestId();
+            $customerCode = $this->configService->getCustomerGuestId();
         }
 
         $documentType = $order->getData(CidFieldsInterface::SHIPPING_CID_TYPE);
@@ -163,19 +165,37 @@ class OrderSenderService
 
         /** @var \TangoTiendas\Model\Customer $customerModel */
         $customerModel = $this->customerFactory->create();
-        $customerModel->setCustomerId((int) $customerId)
+        $customerModel->setCustomerId((int)1)
+            ->setCode($customerCode)
             ->setDocumentType($documentType)
             ->setDocumentNumber($order->getData(CidFieldsInterface::SHIPPING_CID_NUMBER))
-        // TODO Cambiar esto a dinamico
+            // TODO Cambiar esto a dinamico
             ->setIvaCategoryCode('CF')
             ->setUser($user)
             ->setFirstName($order->getCustomerFirstname())
             ->setLastName($order->getCustomerLastname())
             ->setEmail($order->getCustomerEmail())
-            ->setProvinceCode($provinceCode)
-        ;
+            ->setProvinceCode($provinceCode);
 
         return $customerModel;
+    }
+
+    private function getDocumentTypeAfip($documentType)
+    {
+        $docTypes = [
+            'cuit' => 80,
+            'cuil' => 86,
+            'cdi' => 87,
+            'le' => 89,
+            'lc' => 90,
+            'dni' => 96,
+        ];
+        $sanitized = preg_replace('/[^A-Za-z]/', '', strtolower($documentType));
+        if (isset($docTypes[$sanitized])) {
+            return $docTypes[$sanitized];
+        }
+
+        return null;
     }
 
     private function getRegionCodeAfip($regionCode)
@@ -211,23 +231,5 @@ class OrderSenderService
         }
 
         return -1;
-    }
-
-    private function getDocumentTypeAfip($documentType)
-    {
-        $docTypes = [
-            'cuit' => 80,
-            'cuil' => 86,
-            'cdi' => 87,
-            'le' => 89,
-            'lc' => 90,
-            'dni' => 96,
-        ];
-        $sanitized = preg_replace('/[^A-Za-z]/', '', strtolower($documentType));
-        if (isset($docTypes[$sanitized])) {
-            return $docTypes[$sanitized];
-        }
-
-        return null;
     }
 }

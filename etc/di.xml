@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <type name="Magento\Framework\Console\CommandListInterface">
         <arguments>
             <argument name="commands" xsi:type="array">
                 <item name="gentoTangoTiendasStockImport" xsi:type="object">Gento\TangoTiendas\Console\StockImportCommand</item>
+                <item name="gentoTangoTiendasPricesImport" xsi:type="object">Gento\TangoTiendas\Console\PricesImportCommand</item>
             </argument>
         </arguments>
     </type>
@@ -28,6 +30,6 @@
     </type>
 
     <type name="Magento\Sales\Api\Data\OrderInterface">
-        <plugin name="gentoTangoTiendasOrderItemTangoSku" type="Gento\TangoTiendas\Plugin\Model\OrderPlugin" />
+        <plugin name="gentoTangoTiendasOrderItemTangoSku" type="Gento\TangoTiendas\Plugin\Model\OrderPlugin"/>
     </type>
 </config>

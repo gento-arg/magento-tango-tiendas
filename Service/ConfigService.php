@@ -32,7 +32,7 @@ class ConfigService
 
     private function getConfig($path)
     {
-        return $this->scopeConfig->getValue('sales_channels/gento_tangotiendas/' . $path);
+        return $this->scopeConfig->getValue('tango/gento_tangotiendas/' . $path);
     }
 
 }

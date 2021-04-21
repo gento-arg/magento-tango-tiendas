@@ -1,13 +1,15 @@
 <?php
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Gento\TangoTiendas\Model\Config\Backend;
 
+use Exception;
 use Magento\Cron\Model\Config\Source\Frequency;
 use Magento\Framework\App\Cache\TypeListInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Config\Value;
 use Magento\Framework\App\Config\ValueFactory;
+use Magento\Framework\App\Config\ValueInterface;
 use Magento\Framework\Data\Collection\AbstractDb;
 use Magento\Framework\Model\Context;
 use Magento\Framework\Model\ResourceModel\AbstractResource;
@@ -20,18 +22,18 @@ abstract class AbstractCron extends Value
     const CRON_FREQUENCY_PATH = '';
 
     /**
-     * @var \Magento\Framework\App\Config\ValueFactory
+     * @var ValueFactory
      */
     protected $_configValueFactory;
 
     /**
-     * @param \Magento\Framework\Model\Context $context
-     * @param \Magento\Framework\Registry $registry
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $config
-     * @param \Magento\Framework\App\Cache\TypeListInterface $cacheTypeList
-     * @param \Magento\Framework\App\Config\ValueFactory $configValueFactory
-     * @param \Magento\Framework\Model\ResourceModel\AbstractResource $resource
-     * @param \Magento\Framework\Data\Collection\AbstractDb $resourceCollection
+     * @param Context $context
+     * @param Registry $registry
+     * @param ScopeConfigInterface $config
+     * @param TypeListInterface $cacheTypeList
+     * @param ValueFactory $configValueFactory
+     * @param AbstractResource $resource
+     * @param AbstractDb $resourceCollection
      * @param array $data
      */
     public function __construct(
@@ -52,7 +54,7 @@ abstract class AbstractCron extends Value
      * After save handler
      *
      * @return $this
-     * @throws \Exception
+     * @throws Exception
      */
     public function afterSave()
     {
@@ -63,8 +65,8 @@ abstract class AbstractCron extends Value
         $frequencyMonthly = Frequency::CRON_MONTHLY;
 
         $cronExprArray = [
-            (int) $time[1], # Minute
-            (int) $time[0], # Hour
+            (int)$time[1], # Minute
+            (int)$time[0], # Hour
             $frequency == $frequencyMonthly ? '1' : '*', # Day of the Month
             '*', # Month of the Year
             $frequency == $frequencyWeekly ? '1' : '*', # Day of the Week
@@ -73,12 +75,12 @@ abstract class AbstractCron extends Value
         $cronExprString = join(' ', $cronExprArray);
 
         try {
-            /** @var $configValue \Magento\Framework\App\Config\ValueInterface */
+            /** @var $configValue ValueInterface */
             $configValue = $this->_configValueFactory->create();
             $configValue->load(static::CRON_STRING_PATH, 'path');
             $configValue->setValue($cronExprString)->setPath(static::CRON_STRING_PATH)->save();
-        } catch (\Exception $e) {
-            throw new \Exception(__('We can\'t save the Cron expression.'));
+        } catch (Exception $e) {
+            throw new Exception(__('We can\'t save the Cron expression.'));
         }
         return parent::afterSave();
     }
