@@ -11,6 +11,6 @@
         <column xsi:type="text" name="tango_sku" nullable="true" comment="SKU del producto en tango"/>
     </table>
     <table name="customer_group" resource="default">
-        <column xsi:type="text" name="tango_id" nullable="true" comment="ID de referencia de Tango"/>
+        <column xsi:type="int" name="tango_id" nullable="true" comment="ID de referencia de Tango"/>
     </table>
 </schema>

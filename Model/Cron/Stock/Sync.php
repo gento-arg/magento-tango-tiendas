@@ -1,19 +1,19 @@
 <?php
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Gento\TangoTiendas\Model\Cron\Stock;
 
 use Gento\TangoTiendas\Logger\Logger;
-use Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterfaceFactory;
+use Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\InventoryApi\Api\Data\SourceItemInterfaceFactory;
+use Magento\InventoryApi\Api\SourceItemsSaveInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use TangoTiendas\Service\ProductsFactory;
 use TangoTiendas\Service\StocksFactory;
-use Magento\InventoryApi\Api\SourceItemsSaveInterface;
-use Magento\InventoryApi\Api\Data\SourceItemInterfaceFactory;
 
 class Sync
 {
@@ -37,7 +37,7 @@ class Sync
     protected $searchCriteriaBuilder;
 
     /**
-     * @var productRepositoryInterfaceFactory
+     * @var ProductRepositoryInterfaceFactory
      */
     protected $productRepositoryFactory;
 
@@ -60,7 +60,7 @@ class Sync
         StocksFactory $stocksServiceFactory,
         ProductsFactory $productServiceFactory,
         SearchCriteriaBuilder $searchCriteriaBuilder,
-        productRepositoryInterfaceFactory $productRepositoryFactory,
+        ProductRepositoryInterfaceFactory $productRepositoryFactory,
         SourceItemsSaveInterface $sourceItemsSaveInterface,
         SourceItemInterfaceFactory $sourceItemFactory,
         ScopeConfigInterface $scopeConfigInterface,
@@ -86,12 +86,12 @@ class Sync
 
         $tokens = [];
         foreach ($websites as $websiteId) {
-            $isActive = (bool) $this->getConfig(static::CONFIG_ACTIVE_PATH, $websiteId);
+            $isActive = (bool)$this->getConfig(static::CONFIG_ACTIVE_PATH, $websiteId);
             if (!$isActive) {
                 continue;
             }
 
-            $isEnable = (bool) $this->getConfig(static::CONFIG_STOCK_ENABLE_PATH, $websiteId);
+            $isEnable = (bool)$this->getConfig(static::CONFIG_STOCK_ENABLE_PATH, $websiteId);
             if (!$isEnable) {
                 continue;
             }
@@ -131,9 +131,10 @@ class Sync
             $page = 1;
 
             try {
-                /** @var \TangoTiendas\Model\PagingResult $data */
-                $data = $service->getList(500, $page++);
                 do {
+                    /** @var \TangoTiendas\Model\PagingResult $data */
+                    $data = $service->getList(500, $page++);
+
                     /** @var \TangoTiendas\Model\Stock $item */
                     foreach ($data->getData() as $item) {
                         $proccesed++;
@@ -252,11 +253,6 @@ class Sync
         return $response;
     }
 
-    private function getMaskedToken($token)
-    {
-        return $token;
-    }
-
     private function getConfig($path, $websiteId)
     {
         return $this->scopeConfig->getValue($path, ScopeInterface::SCOPE_WEBSITE, $websiteId);
@@ -274,7 +270,7 @@ class Sync
         do {
             /** @var \TangoTiendas\Model\PagingResult $result */
             $result = $service->getList(500, $page);
-            foreach ($result->getData() as /** @var \TangoTiendas\Model\Product */$kitItem) {
+            foreach ($result->getData() as /** @var \TangoTiendas\Model\Product */ $kitItem) {
                 if (!$kitItem->isKit()) {
                     continue;
                 }
@@ -295,5 +291,10 @@ class Sync
         } while ($result->hasMoreData());
 
         return $kits;
+    }
+
+    private function getMaskedToken($token)
+    {
+        return $token;
     }
 }

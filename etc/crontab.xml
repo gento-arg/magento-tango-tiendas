@@ -4,5 +4,8 @@
         <job name="gento_tangotiendas_stock" instance="Gento\TangoTiendas\Model\Cron\Stock\Sync" method="execute">
             <config_path>crontab/gento_tangotiendas/jobs/gento_tangotiendas_stock/schedule/cron_expr</config_path>
         </job>
+        <job name="gento_tangotiendas_prices" instance="Gento\TangoTiendas\Model\Cron\Prices\Sync" method="execute">
+            <config_path>crontab/gento_tangotiendas/jobs/gento_tangotiendas_prices/schedule/cron_expr</config_path>
+        </job>
     </group>
 </config>

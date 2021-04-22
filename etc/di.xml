@@ -32,4 +32,15 @@
     <type name="Magento\Sales\Api\Data\OrderInterface">
         <plugin name="gentoTangoTiendasOrderItemTangoSku" type="Gento\TangoTiendas\Plugin\Model\OrderPlugin"/>
     </type>
+    <type name="Magento\Customer\Block\Adminhtml\Group\Edit\Form">
+        <plugin name="gentoTangoTiendasCustomerBlockAdminEdit"
+                type="Gento\TangoTiendas\Plugin\Model\Customer\Group\EditPlugin"
+                disabled="false"/>
+    </type>
+    <type name="Magento\Customer\Model\ResourceModel\Group">
+        <plugin name="gentoTangoTiendasCustomerGroupResourceModel"
+                type="Gento\TangoTiendas\Plugin\Model\Customer\Group\ResourceModelPlugin"
+                disabled="false"/>
+    </type>
 </config>
+

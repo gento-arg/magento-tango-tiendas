@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<config>
+    <extension_attributes for="Magento\Customer\Api\Data\GroupInterface">
+        <attribute code="tango_id" type="string">
+            <join reference_table="customer_group" reference_field="customer_group_id"
+                  join_on_field="customer_group_id">
+                <field column="tango_id">tango_id</field>
+            </join>
+        </attribute>
+    </extension_attributes>
+</config>
