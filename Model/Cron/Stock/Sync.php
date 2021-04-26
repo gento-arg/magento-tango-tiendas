@@ -219,7 +219,7 @@ class Sync
                     ->addFilter('tango_sku', $kitSku)
                     ->create();
 
-                $productList = $productRepositoryFactory->getList($searchCriteria);
+                $productList = $productRepository->getList($searchCriteria);
                 if ($productList->getTotalCount() == 0) {
                     $this->logger->info(__('Unknow sku: %1', $kitSku));
                     continue;
