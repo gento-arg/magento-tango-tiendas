@@ -142,7 +142,7 @@ class Sync
                         $baseStock[$item->getSKUCode()] = $item->getQuantity();
 
                         $searchCriteria = $this->searchCriteriaBuilder
-                            ->addFilter('tango_sku', $item->getSKUCode())
+                            ->addFilter('tango_sku', trim($item->getSKUCode()))
                             ->create();
 
                         $productList = $productRepository->getList($searchCriteria);
@@ -161,7 +161,7 @@ class Sync
 
                         $sourceItem = $this->sourceItemFactory->create();
                         $sourceItem->setSourceCode('default');
-                        $sourceItem->setSku($item->getSKUCode());
+                        $sourceItem->setSku($product->getSku());
                         $sourceItem->setQuantity($item->getQuantity());
                         $sourceItem->setStatus((int)($item->getQuantity() > 0));
                         $this->sourceItemsSaveInterface->execute([$sourceItem]);
@@ -219,7 +219,7 @@ class Sync
                     ->addFilter('tango_sku', $kitSku)
                     ->create();
 
-                $productList = $productRepositoryFactory->getList($searchCriteria);
+                $productList = $productRepository->getList($searchCriteria);
                 if ($productList->getTotalCount() == 0) {
                     $this->logger->info(__('Unknow sku: %1', $kitSku));
                     continue;
