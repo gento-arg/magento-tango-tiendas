@@ -39,6 +39,7 @@ class PricesImportCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->syncCommand->setOutput($output);
         $this->syncCommand->execute();
     }
 }

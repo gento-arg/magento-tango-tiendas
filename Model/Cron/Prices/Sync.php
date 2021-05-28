@@ -4,21 +4,27 @@ declare (strict_types=1);
 namespace Gento\TangoTiendas\Model\Cron\Prices;
 
 use Gento\TangoTiendas\Logger\Logger;
+use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterfaceFactory;
+use Magento\Config\Console\Command\EmulatedAdminhtmlAreaProcessor;
+use Magento\Cron\Model\Schedule;
 use Magento\Customer\Api\GroupRepositoryInterface;
+use Magento\Customer\Model\Group;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Helper\ProgressBarFactory;
+use Symfony\Component\Console\Output\OutputInterface;
 use TangoTiendas\Service\PriceListsFactory;
 use TangoTiendas\Service\PricesFactory;
 
 class Sync
 {
-    const CONFIG_TOKEN_PATH = 'tango/gento_tangotiendas/api_token';
     const CONFIG_ACTIVE_PATH = 'tango/gento_tangotiendas/active';
     const CONFIG_PRICES_ENABLE_PATH = 'tango/gento_tangotiendas/import_prices/enabled';
-
+    const CONFIG_TOKEN_PATH = 'tango/gento_tangotiendas/api_token';
     /**
      * @var PricesFactory
      */
@@ -53,7 +59,41 @@ class Sync
      * @var LoggerInterface
      */
     protected $logger;
+    /**
+     * @var EmulatedAdminhtmlAreaProcessor
+     */
+    private $emulatedAreaProcessor;
+    /**
+     * @var ProductTierPriceInterfaceFactory
+     */
+    private $productTierPriceInterfaceFactory;
+    /**
+     * @var ProgressBarFactory
+     */
+    private $barFactory;
+    /**
+     * @var OutputInterface
+     */
+    private $output;
+    /**
+     * @var ProgressBar
+     */
+    private $currentBar;
 
+    /**
+     * Sync constructor.
+     * @param PricesFactory $pricesServiceFactory
+     * @param PriceListsFactory $pricesListServiceFactory
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param ScopeConfigInterface $scopeConfigInterface
+     * @param StoreManagerInterface $storeManager
+     * @param GroupRepositoryInterface $groupRepository
+     * @param ProductRepositoryInterfaceFactory $productRepositoryFactory
+     * @param Logger $logger
+     * @param EmulatedAdminhtmlAreaProcessor $emulatedAreaProcessor
+     * @param ProductTierPriceInterfaceFactory $productTierPriceInterfaceFactory
+     * @param ProgressBarFactory $barFactory
+     */
     public function __construct(
         PricesFactory $pricesServiceFactory,
         PriceListsFactory $pricesListServiceFactory,
@@ -61,8 +101,11 @@ class Sync
         ScopeConfigInterface $scopeConfigInterface,
         StoreManagerInterface $storeManager,
         GroupRepositoryInterface $groupRepository,
-        productRepositoryInterfaceFactory $productRepositoryFactory,
-        Logger $logger
+        ProductRepositoryInterfaceFactory $productRepositoryFactory,
+        Logger $logger,
+        EmulatedAdminhtmlAreaProcessor $emulatedAreaProcessor,
+        ProductTierPriceInterfaceFactory $productTierPriceInterfaceFactory,
+        ProgressBarFactory $barFactory
     ) {
         $this->pricesServiceFactory = $pricesServiceFactory;
         $this->pricesListServiceFactory = $pricesListServiceFactory;
@@ -72,9 +115,19 @@ class Sync
         $this->groupRepository = $groupRepository;
         $this->productRepositoryFactory = $productRepositoryFactory;
         $this->logger = $logger;
+        $this->emulatedAreaProcessor = $emulatedAreaProcessor;
+        $this->productTierPriceInterfaceFactory = $productTierPriceInterfaceFactory;
+        $this->barFactory = $barFactory;
     }
 
-    public function execute()
+    public function execute(Schedule $schedule = null)
+    {
+        $this->emulatedAreaProcessor->process(function () {
+            $this->processData();
+        });
+    }
+
+    public function processData()
     {
         $websites = array_map(function ($item) {
             return $item->getId();
@@ -103,7 +156,33 @@ class Sync
 
         $response = [];
         $step = 1;
-        foreach ($tokens as $token) {
+        $searchCriteria = $this->searchCriteriaBuilder
+            ->addFilter('tango_id', null, 'neq')
+            ->create();
+
+        $customerGroups = $this->groupRepository->getList($searchCriteria);
+
+        $matchesGroups = [];
+        $defaultPriceList = null;
+        $this->startProgress($customerGroups->getTotalCount(), 'Preparing groups');
+        foreach ($customerGroups->getItems() as $customerGroup) {
+            $this->advanceProgress();
+            $tangoId = $customerGroup->getExtensionAttributes()->getTangoId();
+            if ($customerGroup->getId() == Group::NOT_LOGGED_IN_ID) {
+                $defaultPriceList = $tangoId;
+            }
+            if (!isset($matchesGroups[$tangoId])) {
+                $matchesGroups[$tangoId] = [];
+            }
+            $matchesGroups[$tangoId][] = $customerGroup->getId();
+        }
+        $this->finishProgress();
+
+        foreach ($tokens as $idxToken => $token) {
+            $this->printOutput(sprintf('<info>Token %s/%s</info>',
+                $idxToken + 1,
+                count($tokens)
+            ));
             /** @var \TangoTiendas\Service\Prices $service */
             $service = $this->pricesServiceFactory->create([
                 'accessToken' => $token,
@@ -117,6 +196,7 @@ class Sync
 
             /** @var \TangoTiendas\Model\PagingResult $data */
             $data = $listService->getList();
+            $this->logger->info(__('Proccesing token: %1', $this->getMaskedToken($token)));
             do {
                 /** @var \TangoTiendas\Model\PriceList $item */
                 foreach ($data->getData() as $item) {
@@ -127,24 +207,6 @@ class Sync
                 }
             } while ($data->hasMoreData());
 
-            $searchCriteria = $this->searchCriteriaBuilder
-                ->addFilter('tango_id', null, 'neq')
-                ->create();
-
-            $customerGroups = $this->groupRepository->getList($searchCriteria);
-
-            $matchesGroups = [];
-            foreach ($customerGroups->getItems() as $customerGroup) {
-                $tangoId = $customerGroup->getExtensionAttributes()->getTangoId();
-
-                if (!isset($matchesGroups[$tangoId])) {
-                    $matchesGroups[$tangoId] = [];
-                }
-                $matchesGroups[$tangoId][] = $customerGroup->getId();
-            }
-
-            $this->logger->info(__('Proccesing token: %1', $this->getMaskedToken($token)));
-
             $updated = $proccesed = 0;
             $page = 1;
 
@@ -152,22 +214,38 @@ class Sync
                 do {
                     /** @var \TangoTiendas\Model\PagingResult $data */
                     $data = $service->getList(500, $page++);
+                    $this->startProgress(count($data->getData()), 'Preparing data page ' . ($page - 1));
 
+                    $prices = [];
                     /** @var \TangoTiendas\Model\Price $item */
                     foreach ($data->getData() as $item) {
+                        $this->advanceProgress();
+                        $skuCode = $item->getSKUCode();
+                        if (!isset($prices[$skuCode])) {
+                            $prices[$skuCode] = [];
+                        }
+                        $prices[$skuCode][$item->getPriceListNumber()] = $item->getPrice();
+                    }
+                    $this->finishProgress();
+
+                    $this->startProgress(count($prices), 'Processing prices');
+                    foreach ($prices as $skuCode => $priceLists) {
+                        $this->advanceProgress();
                         $proccesed++;
 
+                        $reformatSkuCode = trim($skuCode);
+
                         $searchCriteria = $this->searchCriteriaBuilder
-                            ->addFilter('tango_sku', $item->getSKUCode())
+                            ->addFilter('tango_sku', $reformatSkuCode, 'like')
                             ->create();
 
                         $productList = $productRepository->getList($searchCriteria);
                         if ($productList->getTotalCount() == 0) {
-                            $this->logger->info(__('Unknow sku: %1', $item->getSKUCode()));
+                            $this->logger->info(__('Unknow sku: %1', $skuCode));
                             continue;
                         }
                         if ($productList->getTotalCount() > 1) {
-                            $this->logger->warning(__('Multiple products with sku: %1', $item->getSKUCode()));
+                            $this->logger->warning(__('Multiple products with sku: %1', $skuCode));
                             continue;
                         }
 
@@ -175,10 +253,68 @@ class Sync
 
                         $product = array_pop($producList);
 
-                        // TODO Process product price
+                        $tiersHasChange = $hasChange = false;
+                        $tierPrices = $product->getTierPrices();
+                        $groupPrices = [];
 
-                        $updated++;
+                        foreach ($tierPrices as $tierPrice) {
+                            $groupPrices[$tierPrice->getCustomerGroupId()] = [
+                                'customer_group_id' => $tierPrice->getCustomerGroupId(),
+                                'value' => $tierPrice->getValue(),
+                                'qty' => $tierPrice->getQty()
+                            ];
+                        }
+                        foreach ($priceLists as $priceListId => $price) {
+                            if ($defaultPriceList == $priceListId) {
+                                // Set default price
+                                if ($price != $product->getPrice()) {
+                                    $product->setPrice($price);
+                                    $hasChange = true;
+                                }
+                            }
+
+                            if ($defaultPriceList != $priceListId && isset($matchesGroups[$priceListId])) {
+                                // Set group price
+                                foreach ($matchesGroups[$priceListId] as $groupId) {
+                                    if (isset($groupPrices[$groupId]) &&
+                                        isset($groupPrices[$groupId]['value']) &&
+                                        $groupPrices[$groupId]['value'] == $price) {
+                                        continue;
+                                    }
+
+                                    $groupPrices[$groupId] = [
+                                        'customer_group_id' => $groupId,
+                                        'value' => $price,
+                                        'qty' => 1
+                                    ];
+                                    $tiersHasChange = true;
+                                }
+                            }
+                        }
+
+                        if ($tiersHasChange) {
+                            $productTierPrices = [];
+                            foreach ($groupPrices as $price) {
+                                $productTierPrices[] = $this->productTierPriceInterfaceFactory->create(
+                                    [
+                                        'data' => $price
+                                    ]
+                                );
+                            }
+                            $product->setTierPrices($productTierPrices);
+                        }
+
+                        try {
+                            if ($hasChange || $tiersHasChange) {
+                                $productRepository->save($product);
+                            }
+                            $updated++;
+                        } catch (\Throwable $th) {
+                            $this->logger->critical($skuCode . ' ' . $th->getMessage());
+                            $response[$step] = __('Error: %1 %2', $skuCode, $th->getMessage());
+                        }
                     }
+                    $this->finishProgress();
                 } while ($data->hasMoreData());
             } catch (\Throwable $th) {
                 $this->logger->critical($th->getMessage());
@@ -192,6 +328,11 @@ class Sync
         return $response;
     }
 
+    public function setOutput(OutputInterface $output)
+    {
+        $this->output = $output;
+    }
+
     private function getConfig($path, $websiteId)
     {
         return $this->scopeConfig->getValue($path, ScopeInterface::SCOPE_WEBSITE, $websiteId);
@@ -200,5 +341,45 @@ class Sync
     private function getMaskedToken($token)
     {
         return $token;
+    }
+
+    private function printOutput($message)
+    {
+        if ($this->output != null) {
+            $this->output->writeln($message);
+        }
+    }
+
+    private function startProgress($max, $message)
+    {
+        if ($this->output != null) {
+            $this->currentBar = $this->barFactory->create([
+                'output' => $this->output,
+                'max' => $max
+            ]);
+            $this->currentBar->setFormat(
+                '<info>%message%</info> %current%/%max% [%bar%] %percent:3s%% %elapsed% %memory:6s%'
+            );
+            $this->currentBar->setMessage($message . '...');
+            $this->currentBar->start();
+            $this->currentBar->display();
+        }
+    }
+
+    private function advanceProgress()
+    {
+        if ($this->currentBar != null) {
+            $this->currentBar->advance();
+        }
+    }
+
+    private function finishProgress()
+    {
+        if ($this->currentBar != null) {
+            $this->currentBar->finish();
+        }
+        if ($this->output != null) {
+            $this->output->writeln('');
+        }
     }
 }
