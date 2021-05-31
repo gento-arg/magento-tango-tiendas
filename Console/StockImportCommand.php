@@ -1,9 +1,11 @@
 <?php
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Gento\TangoTiendas\Console;
 
 use Gento\TangoTiendas\Model\Cron\Stock\Sync;
+use Magento\Framework\App\Area;
+use Magento\Framework\App\State;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -14,13 +16,19 @@ class StockImportCommand extends Command
      * @var Sync
      */
     protected $syncCommand;
+    /**
+     * @var State
+     */
+    private $state;
 
     public function __construct(
         Sync $syncCommand,
+        State $state,
         string $name = null
     ) {
         $this->syncCommand = $syncCommand;
         parent::__construct($name);
+        $this->state = $state;
     }
 
     /**
@@ -39,6 +47,7 @@ class StockImportCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->state->setAreaCode(Area::AREA_CRONTAB);
         $this->syncCommand->execute();
     }
 }

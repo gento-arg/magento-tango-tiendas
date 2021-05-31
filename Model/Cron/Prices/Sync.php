@@ -6,7 +6,6 @@ namespace Gento\TangoTiendas\Model\Cron\Prices;
 use Gento\TangoTiendas\Logger\Logger;
 use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterfaceFactory;
-use Magento\Config\Console\Command\EmulatedAdminhtmlAreaProcessor;
 use Magento\Cron\Model\Schedule;
 use Magento\Customer\Api\GroupRepositoryInterface;
 use Magento\Customer\Model\Group;
@@ -60,10 +59,6 @@ class Sync
      */
     protected $logger;
     /**
-     * @var EmulatedAdminhtmlAreaProcessor
-     */
-    private $emulatedAreaProcessor;
-    /**
      * @var ProductTierPriceInterfaceFactory
      */
     private $productTierPriceInterfaceFactory;
@@ -90,7 +85,6 @@ class Sync
      * @param GroupRepositoryInterface $groupRepository
      * @param ProductRepositoryInterfaceFactory $productRepositoryFactory
      * @param Logger $logger
-     * @param EmulatedAdminhtmlAreaProcessor $emulatedAreaProcessor
      * @param ProductTierPriceInterfaceFactory $productTierPriceInterfaceFactory
      * @param ProgressBarFactory $barFactory
      */
@@ -103,7 +97,6 @@ class Sync
         GroupRepositoryInterface $groupRepository,
         ProductRepositoryInterfaceFactory $productRepositoryFactory,
         Logger $logger,
-        EmulatedAdminhtmlAreaProcessor $emulatedAreaProcessor,
         ProductTierPriceInterfaceFactory $productTierPriceInterfaceFactory,
         ProgressBarFactory $barFactory
     ) {
@@ -115,19 +108,11 @@ class Sync
         $this->groupRepository = $groupRepository;
         $this->productRepositoryFactory = $productRepositoryFactory;
         $this->logger = $logger;
-        $this->emulatedAreaProcessor = $emulatedAreaProcessor;
         $this->productTierPriceInterfaceFactory = $productTierPriceInterfaceFactory;
         $this->barFactory = $barFactory;
     }
 
     public function execute(Schedule $schedule = null)
-    {
-        $this->emulatedAreaProcessor->process(function () {
-            $this->processData();
-        });
-    }
-
-    public function processData()
     {
         $websites = array_map(function ($item) {
             return $item->getId();
