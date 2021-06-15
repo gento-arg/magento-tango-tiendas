@@ -16,8 +16,14 @@ use Magento\Store\Model\StoreManagerInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\ProgressBarFactory;
 use Symfony\Component\Console\Output\OutputInterface;
+use TangoTiendas\Model\PagingResult;
+use TangoTiendas\Model\Price;
+use TangoTiendas\Model\PriceList;
+use TangoTiendas\Service\PriceLists;
 use TangoTiendas\Service\PriceListsFactory;
+use TangoTiendas\Service\Prices;
 use TangoTiendas\Service\PricesFactory;
+use Throwable;
 
 class Sync
 {
@@ -164,45 +170,44 @@ class Sync
         $this->finishProgress();
 
         foreach ($tokens as $idxToken => $token) {
-            $this->printOutput(sprintf('<info>Token %s/%s</info>',
+            $this->printOutput(sprintf(
+                '<info>Token %s/%s</info>',
                 $idxToken + 1,
                 count($tokens)
             ));
-            /** @var \TangoTiendas\Service\Prices $service */
+            /** @var Prices */
             $service = $this->pricesServiceFactory->create([
                 'accessToken' => $token,
             ]);
-            /** @var \TangoTiendas\Service\PriceLists $service */
+            /** @var PriceLists */
             $listService = $this->pricesListServiceFactory->create([
                 'accessToken' => $token,
             ]);
 
             $priceLists = [];
 
-            /** @var \TangoTiendas\Model\PagingResult $data */
-            $data = $listService->getList();
+            /** @var PagingResult $data */
+            $page = 1;
             $this->logger->info(__('Proccesing token: %1', $this->getMaskedToken($token)));
             do {
-                /** @var \TangoTiendas\Model\PriceList $item */
+                $data = $listService->getList(500, $page++);
+                /** @var PriceList $item */
                 foreach ($data->getData() as $item) {
                     $priceLists[] = $item;
                 }
-                if ($data->hasMoreData()) {
-                    $data = $service->getList();
-                }
             } while ($data->hasMoreData());
 
-            $updated = $proccesed = 0;
+            $updated = $processed = 0;
             $page = 1;
 
             try {
                 do {
-                    /** @var \TangoTiendas\Model\PagingResult $data */
+                    /** @var PagingResult $data */
                     $data = $service->getList(500, $page++);
                     $this->startProgress(count($data->getData()), 'Preparing data page ' . ($page - 1));
 
                     $prices = [];
-                    /** @var \TangoTiendas\Model\Price $item */
+                    /** @var Price $item */
                     foreach ($data->getData() as $item) {
                         $this->advanceProgress();
                         $skuCode = $item->getSKUCode();
@@ -216,7 +221,7 @@ class Sync
                     $this->startProgress(count($prices), 'Processing prices');
                     foreach ($prices as $skuCode => $priceLists) {
                         $this->advanceProgress();
-                        $proccesed++;
+                        $processed++;
 
                         $reformatSkuCode = trim($skuCode);
 
@@ -226,7 +231,7 @@ class Sync
 
                         $productList = $productRepository->getList($searchCriteria);
                         if ($productList->getTotalCount() == 0) {
-                            $this->logger->info(__('Unknow sku: %1', $skuCode));
+                            $this->logger->info(__('Unknown sku: %1', $skuCode));
                             continue;
                         }
                         if ($productList->getTotalCount() > 1) {
@@ -291,23 +296,24 @@ class Sync
 
                         try {
                             if ($hasChange || $tiersHasChange) {
+                                $product->setStoreId(0);
                                 $productRepository->save($product);
                             }
                             $updated++;
-                        } catch (\Throwable $th) {
+                        } catch (Throwable $th) {
                             $this->logger->critical($skuCode . ' ' . $th->getMessage());
                             $response[$step] = __('Error: %1 %2', $skuCode, $th->getMessage());
                         }
                     }
                     $this->finishProgress();
                 } while ($data->hasMoreData());
-            } catch (\Throwable $th) {
+            } catch (Throwable $th) {
                 $this->logger->critical($th->getMessage());
                 $response[$step] = __('Error: %1', $th->getMessage());
             }
 
-            if ($proccesed > 0) {
-                $response[$step] = __('Processed/Updated: %1/%s', $proccesed, $updated);
+            if ($processed > 0) {
+                $response[$step] = __('Processed/Updated: %1/%s', $processed, $updated);
             }
         }
         return $response;
