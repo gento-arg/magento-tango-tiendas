@@ -8,6 +8,8 @@ use Magento\Ui\Component\Container;
 
 class SearchProductCode extends AbstractModifier
 {
+    const CODE_FIELD = 'tango_sku';
+    const CODE_GROUP_TANGO_SKU = 'container_tango_sku';
     /**
      * @var array
      */
@@ -41,9 +43,54 @@ class SearchProductCode extends AbstractModifier
     {
         $this->meta = $meta;
 
+        $this->moveToFieldset();
         $this->addSearchProductCodeLink();
 
         return $this->meta;
+    }
+
+    private function moveToFieldset()
+    {
+        $meta = $this->meta;
+        $groupCode = $this->getGroupCodeByField($meta, static::CODE_FIELD)
+            ?: $this->getGroupCodeByField($meta, self::CODE_GROUP_TANGO_SKU);
+
+        if ($groupCode && !empty($meta[$groupCode]['children'][self::CODE_GROUP_TANGO_SKU])) {
+            if (!empty($meta[$groupCode]['children'][self::CODE_GROUP_TANGO_SKU])) {
+                $meta[$groupCode]['children'][self::CODE_GROUP_TANGO_SKU] = array_replace_recursive(
+                    $meta[$groupCode]['children'][self::CODE_GROUP_TANGO_SKU],
+                    [
+                        'arguments' => [
+                            'data' => [
+                                'config' => [
+                                    'component' => 'Magento_Ui/js/form/components/group',
+                                ]
+                            ]
+                        ],
+                    ]
+                );
+            }
+            if (!empty(
+            $meta[$groupCode]['children'][self::CODE_GROUP_TANGO_SKU]['children']['search_tango_code_button']
+            )) {
+                $config['componentType'] = 'container';
+                $meta[$groupCode]['children'][self::CODE_GROUP_TANGO_SKU] = array_replace_recursive(
+                    $meta[$groupCode]['children'][self::CODE_GROUP_TANGO_SKU],
+                    [
+                        'children' => [
+                            'search_tango_code_button' => [
+                                'arguments' => [
+                                    'data' => [
+                                        'config' => $config,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ]
+                );
+            }
+        }
+        $this->meta = $meta;
     }
 
     private function addSearchProductCodeLink()
