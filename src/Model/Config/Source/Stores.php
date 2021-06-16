@@ -1,5 +1,5 @@
 <?php
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Gento\TangoTiendas\Model\Config\Source;
 
@@ -7,14 +7,14 @@ use Gento\TangoTiendas\Service\ConfigService;
 use Magento\Framework\Data\OptionSourceInterface;
 use Magento\Framework\Message\ManagerInterface;
 use TangoTiendas\Exceptions\ClientException;
-use TangoTiendas\Service\WarehousesFactory;
+use TangoTiendas\Service\StoresFactory;
 
-class Warehouses implements OptionSourceInterface
+class Stores implements OptionSourceInterface
 {
     /**
-     * @var WarehousesFactory
+     * @var StoresFactory
      */
-    protected $warehouseServiceFactory;
+    protected $storesServiceFactory;
 
     /**
      * @var ConfigService
@@ -27,40 +27,39 @@ class Warehouses implements OptionSourceInterface
     protected $messageManager;
 
     public function __construct(
-        WarehousesFactory $warehouseServiceFactory,
+        StoresFactory $storesServiceFactory,
         ConfigService $configService,
         ManagerInterface $messageManager
     ) {
-        $this->warehouseServiceFactory = $warehouseServiceFactory;
+        $this->storesServiceFactory = $storesServiceFactory;
         $this->configService = $configService;
         $this->messageManager = $messageManager;
     }
 
     public function toOptionArray()
     {
-        $opts = [];
+        $opts = [
+            0 => [
+                'value' => '',
+                'label' => __('-- Default value --'),
+            ]
+        ];
         try {
             if (!$this->configService->getApiToken()) {
                 return $opts;
             }
-
-            /** @var \TangoTiendas\Service\Warehouse $warehouseService */
-            $warehouseService = $this->warehouseServiceFactory->create([
+            /** @var \TangoTiendas\Service\Stores $storeService */
+            $storeService = $this->storesServiceFactory->create([
                 'accessToken' => $this->configService->getApiToken(),
             ]);
 
-            /** @var \TangoTiendas\Model\PagingResult $items */
-            $items = $warehouseService->getList();
-            $opts[0] = [
-                'value' => '',
-                'label' => __('-- Default value --'),
-            ];
+            /** @var \TangoTiendas\Model\PagingResult $stores */
+            $stores = $storeService->getList();
 
-            /** @var \TangoTiendas\Model\Warehouse $item */
-            foreach ($items->getData() as $item) {
+            foreach ($stores->getData() as $store) {
                 $opts[] = [
-                    'value' => $item->getCode(),
-                    'label' => $item->getDescription(),
+                    'value' => $store->getStoreNumber(),
+                    'label' => $store->getDescription(),
                 ];
             }
         } catch (ClientException $ce) {

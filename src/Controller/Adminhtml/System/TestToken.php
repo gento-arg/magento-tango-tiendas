@@ -1,5 +1,5 @@
 <?php
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Gento\TangoTiendas\Controller\Adminhtml\System;
 
@@ -37,18 +37,24 @@ class TestToken extends Action
 
     public function execute()
     {
-        $success = true;
+        $success = false;
         $status = '';
         try {
             $token = $this->getRequest()->getParam('token');
+            if (!empty($token)) {
+                /** @var \TangoTiendas\Service\Stores $storeService */
+                $storeService = $this->storesServiceFactory->create([
+                    'accessToken' => $token,
+                ]);
+                $status = $storeService->getStatus();
+                $success = true;
+            }
 
-            /** @var \TangoTiendas\Service\Stores $storeService */
-            $storeService = $this->storesServiceFactory->create([
-                'accessToken' => $token,
-            ]);
-            $status = $storeService->getStatus();
+            if (empty($token)) {
+                $status = __('Please complete the token');
+            }
+
         } catch (\Exception $e) {
-            $success = false;
             $status = $e->getMessage();
             $this->logger->critical($e);
         }
