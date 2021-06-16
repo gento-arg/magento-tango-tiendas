@@ -28,13 +28,13 @@ class EditPlugin
     ) {
         $groupId = $this->registry->registry(RegistryConstants::CURRENT_GROUP_ID);
         /** @var \Magento\Customer\Api\Data\GroupInterface $customerGroup */
+        $tangoId = null;
         if ($groupId === null) {
             $customerGroup = $this->groupDataFactory->create();
         } else {
             $customerGroup = $this->groupRegistry->retrieve($groupId);
+            $tangoId = $customerGroup->getData('tango_id');
         }
-
-        $tangoId = $customerGroup->getData('tango_id');
 
         $form->getElement('base_fieldset')->addField(
             'tango_id',
