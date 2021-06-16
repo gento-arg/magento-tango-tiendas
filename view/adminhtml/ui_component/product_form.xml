@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <modal name="tango_code_search">
+        <settings>
+            <options>
+                <option name="title" xsi:type="string" translate="true">Search tango code</option>
+                <option name="buttons" xsi:type="array">
+                    <item name="0" xsi:type="array">
+                        <item name="text" xsi:type="string">Cancel</item>
+                        <item name="class" xsi:type="string">action-secondary</item>
+                        <item name="actions" xsi:type="array">
+                            <item name="0" xsi:type="array">
+                                <item name="targetName" xsi:type="string">${ $.name }</item>
+                                <item name="actionName" xsi:type="string">actionCancel</item>
+                            </item>
+                        </item>
+                    </item>
+                </option>
+            </options>
+        </settings>
+        <insertListing name="tango_search_code_grid" component="Gento_TangoTiendas/js/grid/searchCode">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="cssclass" xsi:type="string">noclass</item>
+                </item>
+            </argument>
+            <settings>
+                <autoRender>true</autoRender>
+                <dataScope>tango_search_code_grid</dataScope>
+                <ns>tango_search_code_listing</ns>
+                <externalProvider>tango_search_code_listing.tango_search_code_listing_data_source</externalProvider>
+                <dataLinks>
+                    <imports>false</imports>
+                    <exports>false</exports>
+                </dataLinks>
+                <externalFilterMode>true</externalFilterMode>
+            </settings>
+        </insertListing>
+    </modal>
+</form>
