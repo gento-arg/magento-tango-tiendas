@@ -1,7 +1,5 @@
 # Gento_TangoTiendas Magento 2 module
 
-[![Build Status](https://travis-ci.com/gento-arg/magento-tango-tiendas.svg?branch=master)](https://travis-ci.com/gento-arg/magento-tango-tiendas)
-
 ## Instalación
 
 `$ composer require gento-arg/module-tango-tiendas`
