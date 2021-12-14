@@ -8,6 +8,7 @@ use Magento\Framework\Api\Search\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider as UiDataProvider;
+use Psr\Log\LoggerInterface;
 use TangoTiendas\Service\ProductsFactory;
 
 class SearchCode extends UiDataProvider
@@ -20,20 +21,24 @@ class SearchCode extends UiDataProvider
      * @var ScopeConfigInterface
      */
     private $scopeConfig;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
-     * SearchCode constructor.
-     * @param string $name
-     * @param string $primaryFieldName
-     * @param string $requestFieldName
-     * @param ReportingInterface $reporting
+     * @param string                $name
+     * @param string                $primaryFieldName
+     * @param string                $requestFieldName
+     * @param ReportingInterface    $reporting
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
-     * @param RequestInterface $request
-     * @param FilterBuilder $filterBuilder
-     * @param ProductsFactory $productsFactory
-     * @param ScopeConfigInterface $scopeConfigInterface
-     * @param array $meta
-     * @param array $data
+     * @param RequestInterface      $request
+     * @param FilterBuilder         $filterBuilder
+     * @param ProductsFactory       $productsFactory
+     * @param ScopeConfigInterface  $scopeConfigInterface
+     * @param LoggerInterface       $logger
+     * @param array                 $meta
+     * @param array                 $data
      */
     public function __construct(
         $name,
@@ -45,12 +50,14 @@ class SearchCode extends UiDataProvider
         FilterBuilder $filterBuilder,
         ProductsFactory $productsFactory,
         ScopeConfigInterface $scopeConfigInterface,
+        LoggerInterface $logger,
         array $meta = [],
         array $data = []
     ) {
         parent::__construct($name, $primaryFieldName, $requestFieldName, $reporting, $searchCriteriaBuilder, $request, $filterBuilder, $meta, $data);
         $this->productsFactory = $productsFactory;
         $this->scopeConfig = $scopeConfigInterface;
+        $this->logger = $logger;
     }
 
     /**
@@ -76,18 +83,22 @@ class SearchCode extends UiDataProvider
         }
 
         $data = [];
+        $totalCount = 0;
         try {
             $data = $productsService->getList($pageSize, 1, $queryFilter)->getData();
             $totalCount = min(count($data), $pageSize);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
+            $this->logger->error($e->getMessage());
         }
 
         return [
             'totalRecords' => $totalCount,
             'items' => array_map(function ($item) {
+                /** @var \TangoTiendas\Model\Product $item */
                 return [
                     'sku_code' => $item->getSKUCode(),
                     'description' => $item->getDescription(),
+                    'additional_description' => $item->getAdditionalDescription(),
                 ];
             }, $data)
         ];

@@ -171,7 +171,7 @@ class Sync
                         $updated++;
                     }
                 } while ($data->hasMoreData());
-            } catch (\Throwable $th) {
+            } catch (\Exception $th) {
                 $this->logger->critical($th->getMessage());
                 $response[$step] = __('Error: %1', $th->getMessage());
             }

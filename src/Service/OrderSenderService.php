@@ -79,7 +79,7 @@ class OrderSenderService
             $notification = $orderService->sendOrder($orderModel);
             $message = $notification->getMessage();
             $this->logger->info(var_export($notification, true));
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
             $message = $e->getMessage();
         }

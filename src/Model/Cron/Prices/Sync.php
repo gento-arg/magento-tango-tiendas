@@ -1,5 +1,6 @@
 <?php
-declare (strict_types=1);
+
+declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Model\Cron\Prices;
 
@@ -23,7 +24,6 @@ use TangoTiendas\Service\PriceLists;
 use TangoTiendas\Service\PriceListsFactory;
 use TangoTiendas\Service\Prices;
 use TangoTiendas\Service\PricesFactory;
-use Throwable;
 
 class Sync
 {
@@ -83,16 +83,17 @@ class Sync
 
     /**
      * Sync constructor.
-     * @param PricesFactory $pricesServiceFactory
-     * @param PriceListsFactory $pricesListServiceFactory
-     * @param SearchCriteriaBuilder $searchCriteriaBuilder
-     * @param ScopeConfigInterface $scopeConfigInterface
-     * @param StoreManagerInterface $storeManager
-     * @param GroupRepositoryInterface $groupRepository
+     *
+     * @param PricesFactory                     $pricesServiceFactory
+     * @param PriceListsFactory                 $pricesListServiceFactory
+     * @param SearchCriteriaBuilder             $searchCriteriaBuilder
+     * @param ScopeConfigInterface              $scopeConfigInterface
+     * @param StoreManagerInterface             $storeManager
+     * @param GroupRepositoryInterface          $groupRepository
      * @param ProductRepositoryInterfaceFactory $productRepositoryFactory
-     * @param Logger $logger
-     * @param ProductTierPriceInterfaceFactory $productTierPriceInterfaceFactory
-     * @param ProgressBarFactory $barFactory
+     * @param Logger                            $logger
+     * @param ProductTierPriceInterfaceFactory  $productTierPriceInterfaceFactory
+     * @param ProgressBarFactory                $barFactory
      */
     public function __construct(
         PricesFactory $pricesServiceFactory,
@@ -300,14 +301,14 @@ class Sync
                                 $productRepository->save($product);
                             }
                             $updated++;
-                        } catch (Throwable $th) {
+                        } catch (\Exception $th) {
                             $this->logger->critical($skuCode . ' ' . $th->getMessage());
                             $response[$step] = __('Error: %1 %2', $skuCode, $th->getMessage());
                         }
                     }
                     $this->finishProgress();
                 } while ($data->hasMoreData());
-            } catch (Throwable $th) {
+            } catch (\Exception $th) {
                 $this->logger->critical($th->getMessage());
                 $response[$step] = __('Error: %1', $th->getMessage());
             }

@@ -18,7 +18,7 @@
             <storageConfig>
                 <param name="indexField" xsi:type="string">source_code</param>
             </storageConfig>
-            <updateUrl path="mui/index/render"/>
+            <updateUrl path="mui/index/render" />
         </settings>
         <dataProvider class="Gento\TangoTiendas\View\Element\UiComponent\DataProvider\SearchCode"
                       name="tango_search_code_listing_data_source">
@@ -32,9 +32,14 @@
         <settings>
             <sticky>true</sticky>
         </settings>
-        <bookmark name="bookmarks"/>
-        <columnsControls name="columns_controls"/>
-        <filterSearch name="name"/>
+        <bookmark name="bookmarks" />
+        <columnsControls name="columns_controls" />
+        <filterSearch name="name">
+            <settings>
+                <placeholder>Search by Tango Code</placeholder>
+                <label>Tango Code</label>
+            </settings>
+        </filterSearch>
         <filters name="listing_filters">
             <settings>
                 <templates>
@@ -47,7 +52,7 @@
                 </templates>
             </settings>
         </filters>
-        <paging name="listing_paging"/>
+        <paging name="listing_paging" />
     </listingToolbar>
     <columns name="tango_search_code_listing_columns">
         <column name="sku_code" sortOrder="25">
@@ -60,7 +65,13 @@
                 <label translate="true">Description</label>
             </settings>
         </column>
-        <actionsColumn name="actions" class="Gento\TangoTiendas\Ui\Component\Listing\Column\SearchCodeActions">
+        <column name="additional_description" sortOrder="40">
+            <settings>
+                <label translate="true">Additional Description</label>
+            </settings>
+        </column>
+        <actionsColumn name="actions" class="Gento\TangoTiendas\Ui\Component\Listing\Column\SearchCodeActions"
+                       sortOrder="900">
             <settings>
                 <indexField>sku_code</indexField>
                 <resizeEnabled>false</resizeEnabled>
