@@ -1,8 +1,10 @@
 <?php
+
 declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Observer\Order;
 
+use Gento\TangoTiendas\Service\OrderSenderService;
 use Gento\TangoTiendas\Service\OrderSenderServiceFactory;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
@@ -23,15 +25,15 @@ class PlaceAfter implements ObserverInterface
 
     public function execute(Observer $observer)
     {
-        /** @var Order $order  */
+        /** @var Order $order */
         $order = $observer->getEvent()->getOrder();
 
-        // Solo se envia la primera vez
         // TODO: Validar si es necesario enviar actualizaciones
         if ($order->getCreatedAt() != $order->getUpdatedAt()) {
             return;
         }
 
+        /** @var OrderSenderService $orderSender */
         $orderSender = $this->orderSenderServiceFactory->create();
         $orderSender->sendOrder($order);
     }

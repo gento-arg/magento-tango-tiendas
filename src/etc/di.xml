@@ -4,8 +4,10 @@
     <type name="Magento\Framework\Console\CommandListInterface">
         <arguments>
             <argument name="commands" xsi:type="array">
-                <item name="gentoTangoTiendasStockImport" xsi:type="object">Gento\TangoTiendas\Console\StockImportCommand</item>
-                <item name="gentoTangoTiendasPricesImport" xsi:type="object">Gento\TangoTiendas\Console\PricesImportCommand</item>
+                <item name="gentoTangoTiendasStockImport"
+                      xsi:type="object">Gento\TangoTiendas\Console\StockImportCommand</item>
+                <item name="gentoTangoTiendasPricesImport"
+                      xsi:type="object">Gento\TangoTiendas\Console\PricesImportCommand</item>
             </argument>
         </arguments>
     </type>
@@ -30,16 +32,14 @@
     </type>
 
     <type name="Magento\Sales\Api\Data\OrderInterface">
-        <plugin name="gentoTangoTiendasOrderItemTangoSku" type="Gento\TangoTiendas\Plugin\Model\OrderPlugin"/>
+        <plugin name="gentoTangoTiendasOrderItemTangoSku" type="Gento\TangoTiendas\Plugin\Model\OrderPlugin" />
     </type>
     <type name="Magento\Customer\Block\Adminhtml\Group\Edit\Form">
         <plugin name="gentoTangoTiendasCustomerBlockAdminEdit"
-                type="Gento\TangoTiendas\Plugin\Model\Customer\Group\EditPlugin"
-                disabled="false"/>
+                type="Gento\TangoTiendas\Plugin\Model\Customer\Group\EditPlugin" disabled="false" />
     </type>
     <type name="Magento\Customer\Model\ResourceModel\Group">
         <plugin name="gentoTangoTiendasCustomerGroupResourceModel"
-                type="Gento\TangoTiendas\Plugin\Model\Customer\Group\ResourceModelPlugin"
-                disabled="false"/>
+                type="Gento\TangoTiendas\Plugin\Model\Customer\Group\ResourceModelPlugin" disabled="false" />
     </type>
 </config>
