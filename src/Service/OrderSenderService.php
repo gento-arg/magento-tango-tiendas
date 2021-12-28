@@ -7,7 +7,6 @@ namespace Gento\TangoTiendas\Service;
 use Gento\TangoTiendas\Block\Adminhtml\Form\Field\PaymentTypes;
 use Gento\TangoTiendas\Logger\Logger;
 use Gento\TangoTiendas\Model\ParseException;
-use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Item;
@@ -97,6 +96,39 @@ class OrderSenderService
     }
 
     /**
+     * @param TangoOrder $orderModel
+     * @param Item       $orderItem
+     *
+     * @throws ModelException
+     * @return void
+     */
+    public function addOrderItem($orderModel, $orderItem)
+    {
+        $parentItem = $orderItem;
+        if ($orderItem->getParentItem() && $orderItem->getParentItem()->getProductType() !== 'bundle') {
+            $parentItem = $orderItem->getParentItem();
+        }
+
+        if (!$orderItem->getTangoSku()) {
+            $this->traceMessages[] = __('TangoTiendas: Producto sin Tango SKU %1', $orderItem->getSku());
+        }
+
+        /** @var OrderItem $orderItemModel */
+        $orderItemModel = $this->orderItemFactory
+            ->create();
+
+        $orderItemModel
+            ->setProductCode($orderItem->getSku())
+            ->setSKUCode($orderItem->getTangoSku())
+            ->setQuantity($orderItem->getQtyOrdered())
+            ->setUnitPrice($parentItem->getPrice())
+            ->setDescription($orderItem->getName())
+            ->setDiscountPercentage($orderItem->getDiscountPercent());
+
+        $orderModel->addOrderItem($orderItemModel);
+    }
+
+    /**
      * @param Order                 $order
      * @param OrderPaymentInterface $orderPayment
      * @param array                 $paymentMapData
@@ -135,10 +167,10 @@ class OrderSenderService
 
         try {
             $orderModel = $this->getOrderModel($order);
-            if ($orderModel->getTotal() != $order->getGrandTotal()) {
+            $this->logger->info(json_encode($orderModel->jsonSerialize(), JSON_PRETTY_PRINT));
+            if ($orderModel->getTotal() !== $order->getGrandTotal()) {
                 throw new ParseException(__('El monto a informar difiere del pedido'));
             }
-            $this->logger->info(json_encode($orderModel->jsonSerialize(), JSON_PRETTY_PRINT));
             $notification = $orderService->sendOrder($orderModel);
             $message = $notification->getMessage();
             $this->logger->info(var_export($notification, true));
@@ -150,7 +182,8 @@ class OrderSenderService
         $message = sprintf('TangoTiendas: %s', $message);
 
         if (count($this->traceMessages) > 0) {
-            $message = sprintf("%s\n\nAdditional information: \n%s", $message, implode(PHP_EOL, $this->traceMessages));
+            $info = implode('<br>' . PHP_EOL, $this->traceMessages);
+            $message = sprintf("%s\n\nAdditional information: \n%s", $message, $info);
         }
 
         $order->addCommentToStatusHistory($message);
@@ -163,6 +196,7 @@ class OrderSenderService
     private function getOrderModel(Order $order)
     {
         $customerModel = $this->getCustomerModel($order);
+        /** @var TangoOrder $orderModel */
         $orderModel = $this->orderFactory->create();
         $orderModel->setCustomer($customerModel)
             ->setDate($order->getCreatedAt())
@@ -170,32 +204,15 @@ class OrderSenderService
             ->setOrderNumber($order->getIncrementId());
 
         foreach ($order->getAllVisibleItems() as /** @var Item */ $orderItem) {
-            $parentItem = $orderItem;
-            if ($orderItem->getParentItem()) {
-                $parentItem = $orderItem->getParentItem();
+            if ($orderItem->getProductType() == 'simple') {
+                $this->addOrderItem($orderModel, $orderItem);
+            } else if ($orderItem->getProductType() == 'bundle') {
+                foreach ($orderItem->getChildrenItems() as $childItem) {
+                    if ($childItem->getProductType() == 'configurable') {
+                        $this->addOrderItem($orderModel, $childItem);
+                    }
+                }
             }
-
-            if ($orderItem->getProductType() == Configurable::TYPE_CODE) {
-                continue;
-            }
-
-            if (!$orderItem->getTangoSku()) {
-                $this->traceMessages[] = __('TangoTiendas: Producto sin Tango SKU %1', $orderItem->getSku());
-            }
-
-            /** @var OrderItem $orderItemModel */
-            $orderItemModel = $this->orderItemFactory
-                ->create();
-
-            $orderItemModel
-                ->setProductCode($orderItem->getSku())
-                ->setSKUCode($orderItem->getTangoSku())
-                ->setQuantity($orderItem->getQtyOrdered())
-                ->setUnitPrice($parentItem->getPrice())
-                ->setDescription($orderItem->getName())
-                ->setDiscountPercentage($orderItem->getDiscountPercent());
-
-            $orderModel->addOrderItem($orderItemModel);
         }
 
         $paymentMatrix = $this->configService->getCodeMapPayment();

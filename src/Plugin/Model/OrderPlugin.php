@@ -1,4 +1,5 @@
 <?php
+
 declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Plugin\Model;
@@ -20,6 +21,10 @@ class OrderPlugin
      */
     protected $productRepository;
 
+    /**
+     * @param SearchCriteriaBuilder      $searchCriteriaBuilder
+     * @param ProductRepositoryInterface $productRepository
+     */
     public function __construct(
         SearchCriteriaBuilder $searchCriteriaBuilder,
         ProductRepositoryInterface $productRepository
@@ -29,7 +34,7 @@ class OrderPlugin
     }
 
     /**
-     * @param OrderInterface  $subject
+     * @param OrderInterface       $subject
      * @param OrderItemInterface[] $items
      */
     public function beforeSetItems(
@@ -38,11 +43,24 @@ class OrderPlugin
     ) {
         $orderItems = [];
         foreach ($items as $item) {
-            $orderItems[$item->getProductId()] = $item;
+            if ($item->getProductType() == 'simple') {
+                if (!isset($orderItems[$item->getSku()])) {
+                    $orderItems[$item->getSku()] = [];
+                }
+                $orderItems[$item->getSku()][] = $item;
+            } else if ($item->getProductType() == 'bundle') {
+                foreach ($item->getChildrenItems() as $childItem) {
+                    if ($childItem->getProductType() == 'configurable') {
+                        if (!isset($orderItems[$childItem->getSku()])) {
+                            $orderItems[$childItem->getSku()] = [];
+                        }
+                        $orderItems[$childItem->getSku()][] = $childItem;
+                    }
+                }
+            }
         }
-
         $searchCriteria = $this->searchCriteriaBuilder
-            ->addFilter('entity_id', array_keys($orderItems), 'in')
+            ->addFilter('sku', array_keys($orderItems), 'in')
             ->create();
 
         $productList = $this->productRepository->getList($searchCriteria);
@@ -52,8 +70,9 @@ class OrderPlugin
                 continue;
             }
 
-            $orderItem = $orderItems[$product->getId()];
-            $orderItem->setTangoSku($product->getTangoSku());
+            foreach ($orderItems[$product->getSku()] as $orderItem) {
+                $orderItem->setTangoSku($product->getTangoSku());
+            }
         }
 
         return [$items];
