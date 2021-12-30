@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:App/etc/routes.xsd">
     <router id="admin">
-        <route id="gento_tangotiendas" frontName="tangotiendas">
+        <route id="tangotiendas" frontName="tangotiendas">
             <module name="Gento_TangoTiendas" before="Magento_Backend" />
         </route>
     </router>

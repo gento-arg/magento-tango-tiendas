@@ -22,6 +22,8 @@ use TangoTiendas\Model\OrderItem;
 use TangoTiendas\Model\OrderItemFactory;
 use TangoTiendas\Model\Payment;
 use TangoTiendas\Model\PaymentFactory;
+use TangoTiendas\Model\Shipping;
+use TangoTiendas\Model\ShippingFactory;
 use TangoTiendas\Service\Orders;
 use TangoTiendas\Service\OrdersFactory as OrdersServiceFactory;
 
@@ -64,6 +66,10 @@ class OrderSenderService
      * @var PaymentFactory
      */
     private $paymentFactory;
+    /**
+     * @var ShippingFactory
+     */
+    private $shippingFactory;
 
     /**
      * @param OrdersServiceFactory $ordersServiceFactory
@@ -72,6 +78,7 @@ class OrderSenderService
      * @param PaymentFactory       $paymentFactory
      * @param OrderItemFactory     $orderItemFactory
      * @param CustomerFactory      $customerFactory
+     * @param ShippingFactory      $shippingFactory
      * @param ConfigService        $configService
      * @param Logger               $logger
      */
@@ -82,6 +89,7 @@ class OrderSenderService
         PaymentFactory $paymentFactory,
         OrderItemFactory $orderItemFactory,
         CustomerFactory $customerFactory,
+        ShippingFactory $shippingFactory,
         ConfigService $configService,
         Logger $logger
     ) {
@@ -93,6 +101,7 @@ class OrderSenderService
         $this->customerFactory = $customerFactory;
         $this->configService = $configService;
         $this->logger = $logger;
+        $this->shippingFactory = $shippingFactory;
     }
 
     /**
@@ -168,7 +177,7 @@ class OrderSenderService
         try {
             $orderModel = $this->getOrderModel($order);
             $this->logger->info(json_encode($orderModel->jsonSerialize(), JSON_PRETTY_PRINT));
-            if ($orderModel->getTotal() !== $order->getGrandTotal()) {
+            if ((float) $orderModel->getTotal() !== (float) $order->getGrandTotal()) {
                 throw new ParseException(__('El monto a informar difiere del pedido'));
             }
             $notification = $orderService->sendOrder($orderModel);
@@ -236,6 +245,20 @@ class OrderSenderService
             }
         }
 
+        /** @var Shipping $shipping */
+        $shipping = $this->shippingFactory->create();
+        $shippingAddress = $order->getShippingAddress();
+        $provinceCode = $shippingAddress->getRegionCode();
+        $provinceCode = $this->getRegionCodeAfip($provinceCode);
+        $shipping->setShippingID($order->getIncrementId())
+            ->setShippingCost($order->getShippingAmount())
+            ->setStreet(implode(', ', $shippingAddress->getStreet()))
+            ->setCity($shippingAddress->getCity())
+            ->setProvinceCode($provinceCode)
+            ->setPostalCode($shippingAddress->getPostcode());
+
+        $orderModel->setShipping($shipping);
+
         return $orderModel;
     }
 
@@ -295,6 +318,7 @@ class OrderSenderService
 
     private function getRegionCodeAfip($regionCode)
     {
+        $regionCode = preg_replace('/^AR\-?/', '', $regionCode);
         $regionCodes = [
             'B' => 1, 'C' => 0, 'H' => 16, 'K' => 2, 'U' => 17, 'X' => 3, 'W' => 4, 'E' => 5, 'P' => 18, 'Y' => 6,
             'L' => 21, 'F' => 8, 'M' => 7, 'N' => 19, 'Q' => 20, 'R' => 22, 'A' => 9, 'J' => 10, 'D' => 11, 'Z' => 23,
@@ -304,6 +328,6 @@ class OrderSenderService
             return $regionCodes[$regionCode];
         }
 
-        return -1;
+        return $regionCode;
     }
 }

@@ -70,6 +70,6 @@ class TestToken extends Action
 
     protected function _isAllowed()
     {
-        return $this->_authorization->isAllowed('Gento_TangoTiendas::config');
+        return $this->_authorization->isAllowed('Gento_TangoTiendas::configuration');
     }
 }

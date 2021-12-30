@@ -14,4 +14,9 @@
             </argument>
         </arguments>
     </virtualType>
+    <type name="Magento\Sales\Block\Adminhtml\Order\View">
+        <plugin name="Gento\TangoTiendas\Plugin\Sales\Block\Adminhtml\Order\View\AddResendButtonPlugin"
+                type="Gento\TangoTiendas\Plugin\Sales\Block\Adminhtml\Order\View\AddResendButtonPlugin"
+                disabled="true" />
+    </type>
 </config>
