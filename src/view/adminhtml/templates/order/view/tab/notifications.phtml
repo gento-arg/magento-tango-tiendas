@@ -1,0 +1,34 @@
+<?php
+/**
+ * @author    Manuel Cánepa <manuel@gento.com.ar>
+ * @copyright GENTo 2022 Todos los derechos reservados
+ */
+
+?>
+<?php
+/** @var \Gento\TangoTiendas\Block\Adminhtml\Order\View\Tab\Notifications $block */
+/** @var \Magento\Framework\Escaper $escaper */
+?>
+<section class="admin__page-section edit-order-notifications">
+    <div class="edit-order-notifications-block">
+        <?php foreach ($block->getFullHistory() as $_item) : ?>
+            <div class="notifications-block-item">
+                <div class="notifications-block-item-comment">
+                    <pre><?= /* @noEscape  */ $_item->getJsonData() ?></pre>
+                </div>
+                <span class="notifications-block-item-date-time">
+                    <?= $escaper->escapeHtml(__('Notification sended')) ?>
+                    <?= /* @noEscape */ $block->formatDate($_item->getCreatedAt()) ?>
+                    <?= /* @noEscape */ $block->formatTime($_item->getCreatedAt()) ?>
+                </span>
+            </div>
+        <?php endforeach; ?>
+        <?php if(count($block->getFullHistory()) === 0 ) : ?>
+            <div class="notifications-block-item">
+                <div class="notifications-block-item-comment">
+                    <?= $escaper->escapeHtml(__('No tango notification was found')) ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>

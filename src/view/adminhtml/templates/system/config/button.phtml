@@ -1,29 +1,36 @@
+<?php
+/**
+ * @author    Manuel Cánepa <manuel@gento.com.ar>
+ * @copyright GENTo 2022 Todos los derechos reservados
+ */
+
+?>
 <script>
     require([
         'jquery',
         'prototype'
-    ], function($){
+    ], function ($) {
         $('#<?=$block->getId();?>').click(function () {
             var token = $('#tango_gento_tangotiendas_api_token').val()
             var params = {
-                token:token
+                token: token
             };
             $('.tangotiendas_status_result').hide();
             new Ajax.Request('<?php echo $block->getAjaxUrl(); ?>', {
                 parameters: params,
                 loaderArea: 'html-body',
                 asynchronous: true,
-                onComplete: function(response) {
-                    if(response.status != 200){
+                onComplete: function (response) {
+                    if (response.status != 200) {
                         $('.tangotiendas_status_result.error').show();
                         $('.tangotiendas_status_result.response').html(response.responseText).show();
                     }
                 },
-                onSuccess: function(response) {
+                onSuccess: function (response) {
                     var rta = response.responseJSON;
-                    var status  = rta.status;
+                    var status = rta.status;
                     var message = status.Message;
-                    if(status.isOk){
+                    if (status.isOk) {
                         $('.tangotiendas_status_result.success').show();
                     } else {
                         $('.tangotiendas_status_result.error').show();
@@ -37,10 +44,12 @@
 
     });
 </script>
-<?=$block->getButtonHtml();?>
+<?= $block->getButtonHtml(); ?>
 <span id="tangotiendas_status">
-    <div class="tangotiendas_status_result success message message-success success" style="display: none;"><?=__('Success');?></div>
-    <div class="tangotiendas_status_result error message message-error error" style="display: none;"><?=__('Error');?></div>
+    <div class="tangotiendas_status_result success message message-success success"
+         style="display: none;"><?= __('Success'); ?></div>
+    <div class="tangotiendas_status_result error message message-error error"
+         style="display: none;"><?= __('Error'); ?></div>
     <div class="tangotiendas_status_result result message message-notice notice" style="display: none;"></div>
     <pre class="tangotiendas_status_result response" style="display: none;"></pre>
 </span>

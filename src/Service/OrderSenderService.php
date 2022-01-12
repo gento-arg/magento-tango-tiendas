@@ -1,4 +1,8 @@
 <?php
+/**
+ * @author    Manuel Cánepa <manuel@gento.com.ar>
+ * @copyright GENTo 2022 Todos los derechos reservados
+ */
 
 declare (strict_types = 1);
 
@@ -6,7 +10,7 @@ namespace Gento\TangoTiendas\Service;
 
 use Gento\TangoTiendas\Block\Adminhtml\Form\Field\PaymentTypes;
 use Gento\TangoTiendas\Logger\Logger;
-use Gento\TangoTiendas\Model\ParseException;
+use Gento\TangoTiendas\Model\OrderNotificationRepository;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Item;
@@ -70,17 +74,19 @@ class OrderSenderService
      * @var ShippingFactory
      */
     private $shippingFactory;
+    private OrderNotificationRepository $notificationRepository;
 
     /**
-     * @param OrdersServiceFactory $ordersServiceFactory
-     * @param OrderFactory         $orderFactory
-     * @param CashPaymentFactory   $cashpaymentFactory
-     * @param PaymentFactory       $paymentFactory
-     * @param OrderItemFactory     $orderItemFactory
-     * @param CustomerFactory      $customerFactory
-     * @param ShippingFactory      $shippingFactory
-     * @param ConfigService        $configService
-     * @param Logger               $logger
+     * @param OrdersServiceFactory        $ordersServiceFactory
+     * @param OrderFactory                $orderFactory
+     * @param CashPaymentFactory          $cashpaymentFactory
+     * @param PaymentFactory              $paymentFactory
+     * @param OrderItemFactory            $orderItemFactory
+     * @param CustomerFactory             $customerFactory
+     * @param ShippingFactory             $shippingFactory
+     * @param ConfigService               $configService
+     * @param Logger                      $logger
+     * @param OrderNotificationRepository $notificationRepository
      */
     public function __construct(
         OrdersServiceFactory $ordersServiceFactory,
@@ -91,7 +97,8 @@ class OrderSenderService
         CustomerFactory $customerFactory,
         ShippingFactory $shippingFactory,
         ConfigService $configService,
-        Logger $logger
+        Logger $logger,
+        OrderNotificationRepository $notificationRepository
     ) {
         $this->ordersServiceFactory = $ordersServiceFactory;
         $this->orderFactory = $orderFactory;
@@ -102,6 +109,7 @@ class OrderSenderService
         $this->configService = $configService;
         $this->logger = $logger;
         $this->shippingFactory = $shippingFactory;
+        $this->notificationRepository = $notificationRepository;
     }
 
     /**
@@ -176,10 +184,9 @@ class OrderSenderService
 
         try {
             $orderModel = $this->getOrderModel($order);
-            $this->logger->info(json_encode($orderModel->jsonSerialize(), JSON_PRETTY_PRINT));
-            if ((float) $orderModel->getTotal() !== (float) $order->getGrandTotal()) {
-                throw new ParseException(__('El monto a informar difiere del pedido'));
-            }
+            $jsonData = json_encode($orderModel->jsonSerialize(), JSON_PRETTY_PRINT);
+            $this->notificationRepository->addNotification($order, $jsonData);
+            $this->logger->info($jsonData);
             $notification = $orderService->sendOrder($orderModel);
             $message = $notification->getMessage();
             $this->logger->info(var_export($notification, true));
@@ -194,7 +201,6 @@ class OrderSenderService
             $info = implode('<br>' . PHP_EOL, $this->traceMessages);
             $message = sprintf("%s\n\nAdditional information: \n%s", $message, $info);
         }
-
         $order->addCommentToStatusHistory($message);
     }
 

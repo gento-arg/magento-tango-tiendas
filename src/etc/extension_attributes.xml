@@ -1,4 +1,10 @@
 <?xml version="1.0"?>
+<!--
+/**
+ * @author    Manuel Cánepa <manuel@gento.com.ar>
+ * @copyright GENTo 2022 Todos los derechos reservados
+ */
+-->
 <config>
     <extension_attributes for="Magento\Customer\Api\Data\GroupInterface">
         <attribute code="tango_id" type="string">

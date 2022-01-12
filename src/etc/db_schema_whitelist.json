@@ -23,5 +23,17 @@
         "column": {
             "tango_id": true
         }
+    },
+    "tangotiendas_order_notification": {
+        "column": {
+            "notification_id": true,
+            "order_id": true,
+            "json_data": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "TANGOTIENDAS_ORDER_NOTIFICATION_ORDER_ID_SALES_ORDER_ENTITY_ID": true
+        }
     }
 }

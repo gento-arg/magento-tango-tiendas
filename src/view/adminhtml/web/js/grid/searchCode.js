@@ -1,3 +1,8 @@
+/**
+ * @author    Manuel Cánepa <manuel@gento.com.ar>
+ * @copyright GENTo 2022 Todos los derechos reservados
+ */
+
 define([
     'Magento_Ui/js/form/components/insert-listing',
     'uiRegistry'

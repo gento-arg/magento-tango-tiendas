@@ -1,5 +1,10 @@
 <?php
-declare (strict_types=1);
+/**
+ * @author    Manuel Cánepa <manuel@gento.com.ar>
+ * @copyright GENTo 2022 Todos los derechos reservados
+ */
+
+declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Model\Config\Backend;
 
@@ -17,24 +22,23 @@ use Magento\Framework\Registry;
 
 abstract class AbstractCron extends Value
 {
+    const CRON_FREQUENCY_PATH = '';
     const CRON_STRING_PATH = '';
     const CRON_TIME_PATH = '';
-    const CRON_FREQUENCY_PATH = '';
-
     /**
      * @var ValueFactory
      */
     protected $_configValueFactory;
 
     /**
-     * @param Context $context
-     * @param Registry $registry
+     * @param Context              $context
+     * @param Registry             $registry
      * @param ScopeConfigInterface $config
-     * @param TypeListInterface $cacheTypeList
-     * @param ValueFactory $configValueFactory
-     * @param AbstractResource $resource
-     * @param AbstractDb $resourceCollection
-     * @param array $data
+     * @param TypeListInterface    $cacheTypeList
+     * @param ValueFactory         $configValueFactory
+     * @param AbstractResource     $resource
+     * @param AbstractDb           $resourceCollection
+     * @param array                $data
      */
     public function __construct(
         Context $context,
@@ -53,8 +57,8 @@ abstract class AbstractCron extends Value
     /**
      * After save handler
      *
-     * @return $this
      * @throws Exception
+     * @return $this
      */
     public function afterSave()
     {
@@ -65,8 +69,8 @@ abstract class AbstractCron extends Value
         $frequencyMonthly = Frequency::CRON_MONTHLY;
 
         $cronExprArray = [
-            (int)$time[1], # Minute
-            (int)$time[0], # Hour
+            (int) $time[1], # Minute
+            (int) $time[0], # Hour
             $frequency == $frequencyMonthly ? '1' : '*', # Day of the Month
             '*', # Month of the Year
             $frequency == $frequencyWeekly ? '1' : '*', # Day of the Week

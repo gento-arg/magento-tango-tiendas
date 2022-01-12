@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * @author    Manuel Cánepa <manuel@gento.com.ar>
+ * @copyright GENTo 2022 Todos los derechos reservados
+ */
+-->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Gento\TangoTiendas\Api\Data\OrderNotificationInterface"
+                type="Gento\TangoTiendas\Model\OrderNotification" />
     <type name="Magento\Framework\Console\CommandListInterface">
         <arguments>
             <argument name="commands" xsi:type="array">
@@ -41,5 +49,16 @@
     <type name="Magento\Customer\Model\ResourceModel\Group">
         <plugin name="gentoTangoTiendasCustomerGroupResourceModel"
                 type="Gento\TangoTiendas\Plugin\Model\Customer\Group\ResourceModelPlugin" disabled="false" />
+    </type>
+
+    <type name="Gento\TangoTiendas\Model\ResourceModel\OrderNotification\Collection">
+        <arguments>
+            <argument name="model" xsi:type="string">Gento\TangoTiendas\Model\OrderNotification</argument>
+            <argument name="resourceModel"
+                      xsi:type="string">Gento\TangoTiendas\Model\ResourceModel\OrderNotification</argument>
+            <argument name="idFieldName" xsi:type="string">notification_id</argument>
+            <argument name="eventPrefix" xsi:type="string">tango_order_notification_collection</argument>
+            <argument name="eventObject" xsi:type="string">notification_collection</argument>
+        </arguments>
     </type>
 </config>

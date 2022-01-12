@@ -1,11 +1,15 @@
 <?php
-declare (strict_types=1);
+/**
+ * @author    Manuel Cánepa <manuel@gento.com.ar>
+ * @copyright GENTo 2022 Todos los derechos reservados
+ */
+
+declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Model\Cron\Stock;
 
 use Gento\TangoTiendas\Logger\Logger;
 use Magento\Catalog\Api\ProductRepositoryInterfaceFactory;
-use Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\InventoryApi\Api\Data\SourceItemInterfaceFactory;
@@ -17,10 +21,9 @@ use TangoTiendas\Service\StocksFactory;
 
 class Sync
 {
-    const CONFIG_TOKEN_PATH = 'tango/gento_tangotiendas/api_token';
     const CONFIG_ACTIVE_PATH = 'tango/gento_tangotiendas/active';
     const CONFIG_STOCK_ENABLE_PATH = 'tango/gento_tangotiendas/import_stock/enabled';
-
+    const CONFIG_TOKEN_PATH = 'tango/gento_tangotiendas/api_token';
     /**
      * @var StocksFactory
      */
@@ -86,12 +89,12 @@ class Sync
 
         $tokens = [];
         foreach ($websites as $websiteId) {
-            $isActive = (bool)$this->getConfig(static::CONFIG_ACTIVE_PATH, $websiteId);
+            $isActive = (bool) $this->getConfig(static::CONFIG_ACTIVE_PATH, $websiteId);
             if (!$isActive) {
                 continue;
             }
 
-            $isEnable = (bool)$this->getConfig(static::CONFIG_STOCK_ENABLE_PATH, $websiteId);
+            $isEnable = (bool) $this->getConfig(static::CONFIG_STOCK_ENABLE_PATH, $websiteId);
             if (!$isEnable) {
                 continue;
             }
@@ -163,7 +166,7 @@ class Sync
                         $sourceItem->setSourceCode('default');
                         $sourceItem->setSku($product->getSku());
                         $sourceItem->setQuantity($item->getQuantity());
-                        $sourceItem->setStatus((int)($item->getQuantity() > 0));
+                        $sourceItem->setStatus((int) ($item->getQuantity() > 0));
                         $this->sourceItemsSaveInterface->execute([$sourceItem]);
 
                         $this->logger->info(__('New stock sku: %1 %2', $product->getSku(), $item->getQuantity()));
@@ -238,7 +241,7 @@ class Sync
                 $sourceItem->setSourceCode('default');
                 $sourceItem->setSku($product->getSku());
                 $sourceItem->setQuantity($qty);
-                $sourceItem->setStatus((int)($qty > 0));
+                $sourceItem->setStatus((int) ($qty > 0));
                 $this->sourceItemsSaveInterface->execute([$sourceItem]);
                 $this->logger->info(__('New stock sku: %1 %2', $product->getSku(), $qty));
 
@@ -251,11 +254,6 @@ class Sync
             }
         }
         return $response;
-    }
-
-    private function getConfig($path, $websiteId)
-    {
-        return $this->scopeConfig->getValue($path, ScopeInterface::SCOPE_WEBSITE, $websiteId);
     }
 
     protected function getParsedKits($token)
@@ -291,6 +289,11 @@ class Sync
         } while ($result->hasMoreData());
 
         return $kits;
+    }
+
+    private function getConfig($path, $websiteId)
+    {
+        return $this->scopeConfig->getValue($path, ScopeInterface::SCOPE_WEBSITE, $websiteId);
     }
 
     private function getMaskedToken($token)
