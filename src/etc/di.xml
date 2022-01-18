@@ -61,4 +61,8 @@
             <argument name="eventObject" xsi:type="string">notification_collection</argument>
         </arguments>
     </type>
+    <type name="Magento\Sales\Api\Data\InvoiceInterface">
+        <plugin name="Gento\TangoTiendas\Plugin\Model\Sales\InvoicePlugin"
+                type="Gento\TangoTiendas\Plugin\Model\Sales\InvoicePlugin" disabled="false" />
+    </type>
 </config>

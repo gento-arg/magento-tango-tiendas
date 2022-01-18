@@ -11,6 +11,7 @@ namespace Gento\TangoTiendas\Service;
 use Gento\TangoTiendas\Block\Adminhtml\Form\Field\PaymentTypes;
 use Gento\TangoTiendas\Logger\Logger;
 use Gento\TangoTiendas\Model\OrderNotificationRepository;
+use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Item;
@@ -173,7 +174,7 @@ class OrderSenderService
         return null;
     }
 
-    public function sendOrder(Order $order)
+    public function sendOrder(OrderInterface $order)
     {
         /** @var Orders $orderService */
         $orderService = $this->ordersServiceFactory->create([
