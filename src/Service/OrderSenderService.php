@@ -220,14 +220,20 @@ class OrderSenderService
             ->setOrderNumber($order->getIncrementId());
 
         foreach ($order->getAllVisibleItems() as /** @var Item */ $orderItem) {
-            if ($orderItem->getProductType() == 'simple') {
-                $this->addOrderItem($orderModel, $orderItem);
-            } else if ($orderItem->getProductType() == 'bundle') {
-                foreach ($orderItem->getChildrenItems() as $childItem) {
-                    if ($childItem->getProductType() == 'configurable') {
-                        $this->addOrderItem($orderModel, $childItem);
+            switch ($orderItem->getProductType()) {
+                case 'simple':
+                    $this->addOrderItem($orderModel, $orderItem);
+                    break;
+                case 'configurable':
+                case 'bundle':
+                    foreach ($orderItem->getChildrenItems() as $childItem) {
+                        if ($orderItem->getProductType() == 'configurable' ||
+                            $childItem->getProductType() == 'configurable'
+                        ) {
+                            $this->addOrderItem($orderModel, $childItem);
+                        }
                     }
-                }
+                    break;
             }
         }
 
