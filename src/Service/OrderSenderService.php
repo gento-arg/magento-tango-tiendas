@@ -263,7 +263,7 @@ class OrderSenderService
         $shippingAddress = $order->getShippingAddress();
         $provinceCode = $shippingAddress->getRegionCode();
         $provinceCode = $this->getRegionCodeAfip($provinceCode);
-        $shipping->setShippingID($order->getIncrementId())
+        $shipping->setShippingID($order->getId())
             ->setShippingCost($order->getShippingAmount())
             ->setStreet(implode(', ', $shippingAddress->getStreet()))
             ->setCity($shippingAddress->getCity())
@@ -320,6 +320,9 @@ class OrderSenderService
 
     private function getDocumentTypeAfip($documentType)
     {
+        if ($documentType === null) {
+            return null;
+        }
         $docTypes = ['cuit' => 80, 'cuil' => 86, 'cdi' => 87, 'le' => 89, 'lc' => 90, 'dni' => 96,];
         $sanitized = preg_replace('/[^A-Za-z]/', '', strtolower($documentType));
         if (isset($docTypes[$sanitized])) {
