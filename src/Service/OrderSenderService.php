@@ -168,7 +168,28 @@ class OrderSenderService
         }
 
         if ($type === PaymentTypes::TYPE_PAYMENT) {
-            return $this->paymentFactory->create();
+            /** @var Payment $paymentModel */
+            $paymentModel = $this->paymentFactory->create();
+            switch ($code) {
+                case 'MPA':
+                    $additionalInfo = $orderPayment->getAdditionalInformation();
+                    $paymentResponse = $additionalInfo['paymentResponse'];
+
+                    if ($paymentResponse['status'] !== 'approved') {
+                        break;
+                    }
+
+                    $installments = $additionalInfo['installments'];
+                    $installmentAmount = $additionalInfo['amount'] / $installments;
+                    return $paymentModel->setPaymentID($order->getEntityId())
+                        ->setVoucherNo($paymentResponse['authorization_code'])
+                        ->setTransactionDate($paymentResponse['money_release_date'])
+                        ->setCardCode('DI')
+                        ->setCardPlanCode('1')
+                        ->setInstallments($installments)
+                        ->setInstallmentAmount($installmentAmount);
+            }
+            return $paymentModel;
         }
 
         return null;
