@@ -242,15 +242,18 @@ class OrderSenderService
 
         foreach ($order->getAllVisibleItems() as /** @var Item */ $orderItem) {
             switch ($orderItem->getProductType()) {
+                case 'virtual':
                 case 'simple':
                     $this->addOrderItem($orderModel, $orderItem);
                     break;
                 case 'configurable':
                 case 'bundle':
                     foreach ($orderItem->getChildrenItems() as $childItem) {
-                        if ($orderItem->getProductType() == 'configurable' ||
-                            $childItem->getProductType() == 'configurable'
+                        if ($orderItem->getProductType() === 'configurable' ||
+                            $childItem->getProductType() === 'configurable'
                         ) {
+                            $this->addOrderItem($orderModel, $childItem);
+                        } elseif ($childItem->getProductType() === 'virtual') {
                             $this->addOrderItem($orderModel, $childItem);
                         }
                     }
