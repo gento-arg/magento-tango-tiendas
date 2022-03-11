@@ -250,10 +250,10 @@ class OrderSenderService
                 case 'bundle':
                     foreach ($orderItem->getChildrenItems() as $childItem) {
                         if ($orderItem->getProductType() === 'configurable' ||
-                            $childItem->getProductType() === 'configurable'
+                            $childItem->getProductType() === 'configurable' ||
+                            $childItem->getProductType() === 'simple' ||
+                            $childItem->getProductType() === 'virtual'
                         ) {
-                            $this->addOrderItem($orderModel, $childItem);
-                        } elseif ($childItem->getProductType() === 'virtual') {
                             $this->addOrderItem($orderModel, $childItem);
                         }
                     }
