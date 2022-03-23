@@ -47,7 +47,7 @@ class OrderPlugin
     ) {
         $orderItems = [];
         foreach ($items as $item) {
-            if ($item->getProductType() == 'simple') {
+            if ($item->getProductType() == 'simple' || $item->getProductType() == 'virtual') {
                 if (!isset($orderItems[$item->getSku()])) {
                     $orderItems[$item->getSku()] = [];
                 }
