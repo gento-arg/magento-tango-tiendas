@@ -24,6 +24,7 @@ class Sync
     const CONFIG_ACTIVE_PATH = 'tango/gento_tangotiendas/active';
     const CONFIG_STOCK_ENABLE_PATH = 'tango/gento_tangotiendas/import_stock/enabled';
     const CONFIG_TOKEN_PATH = 'tango/gento_tangotiendas/api_token';
+    const CONFIG_WAREHOUSE = 'tango/gento_tangotiendas/warehouse';
     /**
      * @var StocksFactory
      */
@@ -134,9 +135,15 @@ class Sync
             $page = 1;
 
             try {
+                $extra = null;
+                $warehouseCode = $this->getConfig(static::CONFIG_WAREHOUSE, 0);
+                if ($warehouseCode) {
+                    $extra .= 'WarehouseCode=' . $warehouseCode;
+                }
+
                 do {
                     /** @var \TangoTiendas\Model\PagingResult $data */
-                    $data = $service->getList(500, $page++);
+                    $data = $service->getList(500, $page++, null, $extra);
 
                     /** @var \TangoTiendas\Model\Stock $item */
                     foreach ($data->getData() as $item) {
