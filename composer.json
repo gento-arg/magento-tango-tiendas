@@ -9,7 +9,7 @@
         "php": ">=7.2",
         "magento/framework": "*",
         "magento/module-store": "*",
-        "gento-arg/tango-tiendas-sdk-php": "*",
+        "gento-arg/tango-tiendas-sdk-php": "^1.1",
         "mugar/module-argentina-regions": "*",
         "mugar/module-customer-identification-document": "*"
     },

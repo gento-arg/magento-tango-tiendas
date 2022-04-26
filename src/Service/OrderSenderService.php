@@ -135,13 +135,16 @@ class OrderSenderService
         $orderItemModel = $this->orderItemFactory
             ->create();
 
+        $unitPrice = $parentItem->getPriceInclTax();
+        $discount = $parentItem->getDiscountPercent() ?? $orderItem->getDiscountPercent();
+
         $orderItemModel
             ->setProductCode($orderItem->getSku())
             ->setSKUCode($orderItem->getTangoSku())
             ->setQuantity($orderItem->getQtyOrdered())
-            ->setUnitPrice($parentItem->getPrice())
+            ->setUnitPrice($unitPrice)
             ->setDescription($orderItem->getName())
-            ->setDiscountPercentage($orderItem->getDiscountPercent());
+            ->setDiscountPercentage($discount);
 
         $orderModel->addOrderItem($orderItemModel);
     }
