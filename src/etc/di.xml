@@ -16,6 +16,8 @@
                       xsi:type="object">Gento\TangoTiendas\Console\StockImportCommand</item>
                 <item name="gentoTangoTiendasPricesImport"
                       xsi:type="object">Gento\TangoTiendas\Console\PricesImportCommand</item>
+                <item name="gentoTangoTiendasOrderSender"
+                      xsi:type="object">Gento\TangoTiendas\Console\OrderSenderCommand</item>
             </argument>
         </arguments>
     </type>
