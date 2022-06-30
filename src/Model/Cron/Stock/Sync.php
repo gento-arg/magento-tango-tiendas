@@ -10,6 +10,7 @@ namespace Gento\TangoTiendas\Model\Cron\Stock;
 
 use Gento\TangoTiendas\Logger\Logger;
 use Magento\Catalog\Api\ProductRepositoryInterfaceFactory;
+use Magento\Cron\Model\Schedule;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\InventoryApi\Api\Data\SourceItemInterfaceFactory;
@@ -82,7 +83,7 @@ class Sync
         $this->logger = $logger;
     }
 
-    public function execute()
+    public function execute(Schedule $schedule = null)
     {
         $websites = array_map(function ($item) {
             return $item->getId();
@@ -109,7 +110,7 @@ class Sync
         $this->logger->info(__('Tokens finded: %1', count($tokens)));
         $productRepository = $this->productRepositoryFactory->create();
 
-        $response = [];
+        $errors = $response = [];
         $step = 1;
         foreach ($tokens as $tokenNumber => $token) {
             $this->logger->info(__('Processing token %1', $tokenNumber + 1));
@@ -161,6 +162,7 @@ class Sync
                             continue;
                         }
                         if ($productList->getTotalCount() > 1) {
+                            $errors[] = __('Multiple products with sku: %1', $item->getSKUCode());
                             $this->logger->warning(__('Multiple products with sku: %1', $item->getSKUCode()));
                             continue;
                         }
@@ -184,6 +186,7 @@ class Sync
             } catch (\Exception $th) {
                 $this->logger->critical($th->getMessage());
                 $response[$step] = __('Error: %1', $th->getMessage());
+                $errors[] = __('Error: %1', $th->getMessage());
             }
 
             $kitsStock = [];
@@ -194,6 +197,7 @@ class Sync
                 foreach ($kitQtys as $componentSku => $qtyRequired) {
                     if ($qtyRequired < 0) {
                         $this->logger->error(__('Invalid qty for kit %1', $kitSku));
+                        $errors[] = __('Invalid qty for kit %1', $kitSku);
                         break;
                     }
 
@@ -237,6 +241,7 @@ class Sync
 
                 if ($productList->getTotalCount() > 1) {
                     $this->logger->warning(__('Multiple products with sku: %1', $kitSku));
+                    $errors[] = __('Multiple products with sku: %1', $kitSku);
                     continue;
                 }
 
@@ -260,6 +265,15 @@ class Sync
                 $this->logger->info($response[$step]);
             }
         }
+
+        if (count($errors) > 0 && $schedule === null) {
+            throw new \Exception(implode("\n", $errors));
+        }
+
+        if (count($errors) > 0 && $schedule !== null) {
+            $schedule->setMessages(implode("\n", $errors));
+        }
+
         return $response;
     }
 

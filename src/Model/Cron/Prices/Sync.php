@@ -131,12 +131,12 @@ class Sync
 
         $tokens = [];
         foreach ($websites as $websiteId) {
-            $isActive = (bool)$this->getConfig(static::CONFIG_ACTIVE_PATH, $websiteId);
+            $isActive = (bool) $this->getConfig(static::CONFIG_ACTIVE_PATH, $websiteId);
             if (!$isActive) {
                 continue;
             }
 
-            $isEnable = (bool)$this->getConfig(static::CONFIG_PRICES_ENABLE_PATH, $websiteId);
+            $isEnable = (bool) $this->getConfig(static::CONFIG_PRICES_ENABLE_PATH, $websiteId);
             if (!$isEnable) {
                 continue;
             }
@@ -150,7 +150,7 @@ class Sync
         $this->logger->info(__('Tokens finded: %1', count($tokens)));
         $productRepository = $this->productRepositoryFactory->create();
 
-        $response = [];
+        $errors = $response = [];
         $step = 1;
         $searchCriteria = $this->searchCriteriaBuilder
             ->addFilter('tango_id', null, 'neq')
@@ -240,6 +240,7 @@ class Sync
                             continue;
                         }
                         if ($productList->getTotalCount() > 1) {
+                            $errors[] = __('Multiple products with sku: %1', $skuCode);
                             $this->logger->warning(__('Multiple products with sku: %1', $skuCode));
                             continue;
                         }
@@ -308,6 +309,7 @@ class Sync
                         } catch (\Exception $th) {
                             $this->logger->critical($skuCode . ' ' . $th->getMessage());
                             $response[$step] = __('Error: %1 %2', $skuCode, $th->getMessage());
+                            $errors[] = __('Error: %1 %2', $skuCode, $th->getMessage());
                         }
                     }
                     $this->finishProgress();
@@ -315,12 +317,22 @@ class Sync
             } catch (\Exception $th) {
                 $this->logger->critical($th->getMessage());
                 $response[$step] = __('Error: %1', $th->getMessage());
+                $errors[] = __('Error: %1', $th->getMessage());
             }
 
             if ($processed > 0) {
                 $response[$step] = __('Processed/Updated: %1/%s', $processed, $updated);
             }
         }
+
+        if (count($errors) > 0 && $schedule === null) {
+            throw new \Exception(implode("\n", $errors));
+        }
+
+        if (count($errors) > 0 && $schedule !== null) {
+            $schedule->setMessages(implode("\n", $errors));
+        }
+
         return $response;
     }
 

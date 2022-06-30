@@ -75,22 +75,6 @@
                         <label>Enabled</label>
                         <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     </field>
-                    <field id="frequency" translate="label" type="select" sortOrder="4" showInDefault="1"
-                           showInWebsite="1" showInStore="0">
-                        <label>Frequency</label>
-                        <source_model>Magento\Cron\Model\Config\Source\Frequency</source_model>
-                        <depends>
-                            <field id="enabled">1</field>
-                        </depends>
-                    </field>
-                    <field id="time" translate="label" type="time" sortOrder="3" showInDefault="1" showInWebsite="1"
-                           showInStore="0">
-                        <label>Start Time</label>
-                        <backend_model>Gento\TangoTiendas\Model\Config\Backend\Stock\Cron</backend_model>
-                        <depends>
-                            <field id="enabled">1</field>
-                        </depends>
-                    </field>
                 </group>
                 <group id="import_prices" translate="label" type="text" sortOrder="50" showInDefault="1"
                        showInWebsite="1" showInStore="0">
@@ -99,22 +83,6 @@
                            showInWebsite="1" showInStore="0" canRestore="1">
                         <label>Enabled</label>
                         <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    </field>
-                    <field id="frequency" translate="label" type="select" sortOrder="4" showInDefault="1"
-                           showInWebsite="1" showInStore="0">
-                        <label>Frequency</label>
-                        <source_model>Magento\Cron\Model\Config\Source\Frequency</source_model>
-                        <depends>
-                            <field id="enabled">1</field>
-                        </depends>
-                    </field>
-                    <field id="time" translate="label" type="time" sortOrder="3" showInDefault="1" showInWebsite="1"
-                           showInStore="0">
-                        <label>Start Time</label>
-                        <backend_model>Gento\TangoTiendas\Model\Config\Backend\Prices\Cron</backend_model>
-                        <depends>
-                            <field id="enabled">1</field>
-                        </depends>
                     </field>
                 </group>
             </group>
