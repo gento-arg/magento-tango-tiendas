@@ -8,6 +8,7 @@ declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Service;
 
+use Magento\Directory\Model\PriceCurrency;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Psr\Log\LoggerInterface;
@@ -29,20 +30,24 @@ class ConfigService
      * @var LoggerInterface
      */
     private $logger;
+    private PriceCurrency $priceCurrency;
 
     /**
      * @param ScopeConfigInterface $scopeConfig
      * @param SerializerInterface  $serializer
      * @param LoggerInterface      $logger
+     * @param PriceCurrency        $priceCurrency
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         SerializerInterface $serializer,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        PriceCurrency $priceCurrency
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->serializer = $serializer;
         $this->logger = $logger;
+        $this->priceCurrency = $priceCurrency;
     }
 
     /**
@@ -89,5 +94,15 @@ class ConfigService
     private function getConfig($path)
     {
         return $this->scopeConfig->getValue('tango/gento_tangotiendas/' . $path);
+    }
+
+    /**
+     * @param $number
+     *
+     * @return float
+     */
+    public function round($number)
+    {
+        return $this->priceCurrency->roundPrice($number, 2);
     }
 }

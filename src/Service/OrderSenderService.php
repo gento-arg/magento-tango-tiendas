@@ -141,10 +141,10 @@ class OrderSenderService
         $orderItemModel
             ->setProductCode($orderItem->getSku())
             ->setSKUCode($orderItem->getTangoSku())
-            ->setQuantity($orderItem->getQtyOrdered())
-            ->setUnitPrice($unitPrice)
+            ->setQuantity($this->configService->round($orderItem->getQtyOrdered()))
+            ->setUnitPrice($this->configService->round($unitPrice))
             ->setDescription($orderItem->getName())
-            ->setDiscountPercentage($discount);
+            ->setDiscountPercentage($this->configService->round($discount));
 
         $orderModel->addOrderItem($orderItemModel);
     }
@@ -166,7 +166,7 @@ class OrderSenderService
             $paymentModel = $this->cashpaymentFactory->create();
             $paymentModel->setPaymentID($order->getEntityId())
                 ->setPaymentMethod($code)
-                ->setPaymentTotal($orderPayment->getAmountPaid());
+                ->setPaymentTotal($this->configService->round($orderPayment->getAmountPaid()));
             return $paymentModel;
         }
 
@@ -190,7 +190,7 @@ class OrderSenderService
                         ->setCardCode('DI')
                         ->setCardPlanCode('1')
                         ->setInstallments($installments)
-                        ->setInstallmentAmount($installmentAmount);
+                        ->setInstallmentAmount($this->configService->round($installmentAmount));
             }
             return $paymentModel;
         }
@@ -291,7 +291,7 @@ class OrderSenderService
         $provinceCode = $shippingAddress->getRegionCode();
         $provinceCode = $this->getRegionCodeAfip($provinceCode);
         $shipping->setShippingID($order->getId())
-            ->setShippingCost($order->getShippingAmount())
+            ->setShippingCost($this->configService->round($order->getShippingAmount()))
             ->setStreet(implode(', ', $shippingAddress->getStreet()))
             ->setCity($shippingAddress->getCity())
             ->setProvinceCode($provinceCode)
