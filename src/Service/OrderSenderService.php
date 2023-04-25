@@ -190,7 +190,8 @@ class OrderSenderService
                         ->setCardCode('DI')
                         ->setCardPlanCode('1')
                         ->setInstallments($installments)
-                        ->setInstallmentAmount($this->configService->round($installmentAmount));
+                        ->setInstallmentAmount($this->configService->round($installmentAmount))
+                        ->setPaymentTotal($paymentResponse['transaction_details']['total_paid_amount']);
             }
             return $paymentModel;
         }
