@@ -191,7 +191,9 @@ class OrderSenderService
                         ->setCardPlanCode('1')
                         ->setInstallments($installments)
                         ->setInstallmentAmount($this->configService->round($installmentAmount))
-                        ->setPaymentTotal($paymentResponse['transaction_details']['total_paid_amount']);
+                        // Eventualmente, MP muestra un amount paid menor o mayor al total, y en la integracion con
+                        // Tango eso no es viable
+                        ->setPaymentTotal($this->configService->round($orderPayment->getAmountPaid()));
             }
             return $paymentModel;
         }
