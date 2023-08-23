@@ -11,6 +11,7 @@ namespace Gento\TangoTiendas\Service;
 use Gento\TangoTiendas\Block\Adminhtml\Form\Field\PaymentTypes;
 use Gento\TangoTiendas\Logger\Logger;
 use Gento\TangoTiendas\Model\OrderNotificationRepository;
+use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Model\Order;
@@ -63,6 +64,7 @@ class OrderSenderService
      * @var string[]
      */
     protected $traceMessages = [];
+    protected SerializerInterface $serializer;
     /**
      * @var CashPaymentFactory
      */
@@ -99,7 +101,8 @@ class OrderSenderService
         ShippingFactory $shippingFactory,
         ConfigService $configService,
         Logger $logger,
-        OrderNotificationRepository $notificationRepository
+        OrderNotificationRepository $notificationRepository,
+        SerializerInterface $serializer
     ) {
         $this->ordersServiceFactory = $ordersServiceFactory;
         $this->orderFactory = $orderFactory;
@@ -111,6 +114,7 @@ class OrderSenderService
         $this->logger = $logger;
         $this->shippingFactory = $shippingFactory;
         $this->notificationRepository = $notificationRepository;
+        $this->serializer = $serializer;
     }
 
     /**
@@ -176,14 +180,23 @@ class OrderSenderService
             switch ($code) {
                 case 'MPA':
                     $additionalInfo = $orderPayment->getAdditionalInformation();
-                    $paymentResponse = $additionalInfo['paymentResponse'];
+                    $paymentResponse = null;
+                    if (isset($additionalInfo['paymentResponse'])) {
+                        $paymentResponse = $additionalInfo['paymentResponse'];
+                    }
+
+                    if ($paymentResponse === null && $orderPayment->getAdditionalData()) {
+                        $paymentResponse = $this->serializer->unserialize($orderPayment->getAdditionalData());
+                    }
 
                     if ($paymentResponse['status'] !== 'approved') {
                         break;
                     }
 
-                    $installments = $additionalInfo['installments'];
-                    $installmentAmount = $additionalInfo['amount'] / $installments;
+                    $amount = isset($additionalInfo['amount']) ? $additionalInfo['amount'] : $paymentResponse['transaction_amount'];
+                    $installments = isset($additionalInfo['installments']) ? $additionalInfo['installments'] : $paymentResponse['installments'];
+
+                    $installmentAmount = $amount / $installments;
                     return $paymentModel->setPaymentID($order->getEntityId())
                         ->setVoucherNo($paymentResponse['authorization_code'])
                         ->setTransactionDate($paymentResponse['money_release_date'])
