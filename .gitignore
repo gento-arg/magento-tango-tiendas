@@ -1,6 +1,7 @@
 *
 !.gitignore
 !.travis.yml
+!phpunit.xml
 !composer.json
 !README.md
 !/.docs
