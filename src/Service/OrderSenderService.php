@@ -90,6 +90,7 @@ class OrderSenderService
      * @param ConfigService               $configService
      * @param Logger                      $logger
      * @param OrderNotificationRepository $notificationRepository
+     * @param SerializerInterface         $serializer
      */
     public function __construct(
         OrdersServiceFactory $ordersServiceFactory,
@@ -178,6 +179,30 @@ class OrderSenderService
             /** @var Payment $paymentModel */
             $paymentModel = $this->paymentFactory->create();
             switch ($code) {
+                case 'MPAPro':
+                    $additionalInfo = $orderPayment->getAdditionalInformation();
+
+                    if (!isset($additionalInfo['mp_status'])) {
+                        break;
+                    }
+
+                    if ($additionalInfo['mp_status'] !== 'approved') {
+                        break;
+                    }
+
+                    $amount = $additionalInfo['payment_0_total_amount'];
+                    $installments = $additionalInfo['payment_0_installments'];
+
+                    $installmentAmount = $amount / $installments;
+                    return $paymentModel->setPaymentID($order->getEntityId())
+                        ->setVoucherNo($orderPayment->getEntityId())
+                        ->setTransactionDate($order->getUpdatedAt())
+                        ->setCardCode('DI')
+                        ->setCardPlanCode('1')
+                        ->setInstallments($installments)
+                        ->setInstallmentAmount($this->configService->round($installmentAmount))
+                        ->setPaymentTotal($this->configService->round($orderPayment->getAmountPaid()));
+                    break;
                 case 'MPA':
                     $additionalInfo = $orderPayment->getAdditionalInformation();
                     $paymentResponse = null;
@@ -199,13 +224,11 @@ class OrderSenderService
                     $installmentAmount = $amount / $installments;
                     return $paymentModel->setPaymentID($order->getEntityId())
                         ->setVoucherNo($paymentResponse['authorization_code'])
-                        ->setTransactionDate($paymentResponse['money_release_date'])
+                        ->setTransactionDate($order->getUpdatedAt())
                         ->setCardCode('DI')
                         ->setCardPlanCode('1')
                         ->setInstallments($installments)
                         ->setInstallmentAmount($this->configService->round($installmentAmount))
-                        // Eventualmente, MP muestra un amount paid menor o mayor al total, y en la integracion con
-                        // Tango eso no es viable
                         ->setPaymentTotal($this->configService->round($orderPayment->getAmountPaid()));
             }
             return $paymentModel;
