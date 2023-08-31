@@ -13,6 +13,7 @@ use Gento\TangoTiendas\Logger\Logger;
 use Gento\TangoTiendas\Model\OrderNotificationRepository;
 use Gento\TangoTiendas\Service\ConfigService;
 use Gento\TangoTiendas\Service\OrderSenderService;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
@@ -27,7 +28,7 @@ use TangoTiendas\Model\PaymentFactory;
 use TangoTiendas\Model\ShippingFactory;
 use TangoTiendas\Service\OrdersFactory as OrdersServiceFactory;
 
-class  OrderSenderServiceMpaProTest extends TestCase
+class  EmptyDataTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -45,10 +46,6 @@ class  OrderSenderServiceMpaProTest extends TestCase
         $datetime = $this->createMock(DateTime::class);
         $paymentFactory->method('create')
             ->willReturn(new Payment());
-        $configService->method('round')
-            ->willReturn(18780.65);
-        $datetime->method('gmtDate')
-            ->willReturn('2023-08-24 12:30:05');
 
         $this->service = new OrderSenderService(
             $ordersServiceFactory,
@@ -67,53 +64,42 @@ class  OrderSenderServiceMpaProTest extends TestCase
     }
 
     /**
-     * @covers \Gento\TangoTiendas\Service\OrderSenderService::getPaymentModel()
+     * @covers       \Gento\TangoTiendas\Service\OrderSenderService::getPaymentModel()
+     * @dataProvider dataProvider
      */
-    public function testCreditCardApproved()
+    public function testOrdersEmptyData($orderMock, $orderPaymentMock)
     {
+        $this->expectException(LocalizedException::class);
+        $this->service->getPaymentModel($orderMock, $orderPaymentMock, [
+            'type' => PaymentTypes::TYPE_PAYMENT,
+            'code' => 'MPANew'
+        ]);
+    }
+
+    public function dataProvider()
+    {
+        $data = [
+            [$this->createMock(Order::class), $this->createMock(OrderPaymentInterface::class)]
+        ];
+
         $orderMock = $this->createMock(Order::class);
         $orderPaymentMock = $this->createMock(OrderPaymentInterface::class);
         $orderPaymentMock->method('getAdditionalInformation')
             ->willReturn([
-                "method_title" => "Pagar a trav\u00e9s de MercadoPago",
-                "init_point" => "https:\/\/www.mercadopago.com.ar\/checkout\/v1\/redirect?pref_id=XXXXXXXXXXXXXXXXXXXXXXXXX",
-                "id" => "XXXXXXXXXXXXXXXXXXXXXXXXX",
-                "payment_0_id" => 123456789,
-                "payment_0_type" => "debvisa",
-                "payment_0_total_amount" => 18780.65,
-                "payment_0_paid_amount" => 18780.65,
-                "payment_0_refunded_amount" => 0,
-                "payment_0_card_number" => "1234",
-                "payment_0_installments" => 1,
-                "mp_0_status" => "approved",
-                "mp_0_status_detail" => "accredited",
-                "payment_0_expiration" => "2023-08-25T19:59:59.000-04:00",
-                "payment_index_list" => [0],
-                "mp_status" => "approved",
-                "mp_status_detail" => "accredited"
-            ]);
-        $orderPaymentMock->method('getEntityId')
-            ->willReturn(1);
 
+            ]);
         $orderMock->method('getEntityId')
             ->willReturn(1);
+        $data[] = [$orderMock, $orderPaymentMock];
 
-        $orderMock->method('getUpdatedAt')
-            ->willReturn('2023-08-24 12:30:05');
+        $orderMock = $this->createMock(Order::class);
+        $orderPaymentMock = $this->createMock(OrderPaymentInterface::class);
+        $orderPaymentMock->method('getAdditionalInformation')
+            ->willReturn(['mp_status' => 'approved']);
+        $orderMock->method('getEntityId')
+            ->willReturn(1);
+        $data[] = [$orderMock, $orderPaymentMock];
 
-        $model = $this->service->getPaymentModel($orderMock, $orderPaymentMock, [
-            'type' => PaymentTypes::TYPE_PAYMENT,
-            'code' => 'MPAPro'
-        ]);
-
-        $this->assertNotNull($model, 'Model was returned null');
-        $this->assertEquals(1, $model->getPaymentID());
-        $this->assertEquals(1, $model->getVoucherNo());
-        $this->assertEquals('2023-08-24 12:30:05', $model->getTransactionDate());
-        $this->assertEquals('DI', $model->getCardCode());
-        $this->assertEquals('1', $model->getCardPlanCode());
-        $this->assertEquals(1, $model->getInstallments());
-        $this->assertEquals(18780.65, $model->getInstallmentAmount());
-        $this->assertEquals(18780.65, $model->getTotal());
+        return $data;
     }
 }
