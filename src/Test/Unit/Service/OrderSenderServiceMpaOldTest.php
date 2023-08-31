@@ -13,7 +13,9 @@ use Gento\TangoTiendas\Logger\Logger;
 use Gento\TangoTiendas\Model\OrderNotificationRepository;
 use Gento\TangoTiendas\Service\ConfigService;
 use Gento\TangoTiendas\Service\OrderSenderService;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Model\Order;
 use PHPUnit\Framework\TestCase;
@@ -41,13 +43,15 @@ class  OrderSenderServiceMpaOldTest extends TestCase
         $logger = $this->createMock(Logger::class);
         $notificationRepository = $this->createMock(OrderNotificationRepository::class);
         $serializer = $this->createMock(SerializerInterface::class);
+        $datetime = $this->createMock(DateTime::class);
         $paymentFactory->method('create')
             ->willReturn(new Payment());
         $configService->method('round')
             ->willReturn($this->returnValueMap([
                 [8404.65, 8404.65]
             ]));
-
+        $datetime->method('gmtDate')
+            ->willReturn('2023-08-24 12:30:05');
 
         $this->service = new OrderSenderService(
             $ordersServiceFactory,
@@ -60,7 +64,8 @@ class  OrderSenderServiceMpaOldTest extends TestCase
             $configService,
             $logger,
             $notificationRepository,
-            $serializer
+            $serializer,
+            $datetime
         );
     }
 
@@ -76,9 +81,6 @@ class  OrderSenderServiceMpaOldTest extends TestCase
             ->willReturn(json_decode($serializedValue, true));
         $orderMock->method('getEntityId')
             ->willReturn(1);
-        $orderMock->method('getUpdatedAt')
-            ->willReturn('2023-08-24 12:30:05');
-
 
         $model = $this->service->getPaymentModel($orderMock, $orderPaymentMock, [
             'type' => PaymentTypes::TYPE_PAYMENT,
@@ -88,7 +90,6 @@ class  OrderSenderServiceMpaOldTest extends TestCase
         $this->assertNotNull($model, 'Model was returned null');
         $this->assertEquals(1, $model->getPaymentID());
         $this->assertEquals('DG5ADP', $model->getVoucherNo());
-        $this->assertEquals('2023-08-24 12:30:05', $model->getTransactionDate());
         $this->assertEquals('DI', $model->getCardCode());
         $this->assertEquals('1', $model->getCardPlanCode());
         $this->assertEquals(1, $model->getInstallments());

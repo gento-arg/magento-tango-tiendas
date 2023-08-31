@@ -11,7 +11,9 @@ namespace Gento\TangoTiendas\Service;
 use Gento\TangoTiendas\Block\Adminhtml\Form\Field\PaymentTypes;
 use Gento\TangoTiendas\Logger\Logger;
 use Gento\TangoTiendas\Model\OrderNotificationRepository;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Model\Order;
@@ -65,6 +67,7 @@ class OrderSenderService
      */
     protected $traceMessages = [];
     protected SerializerInterface $serializer;
+    protected DateTime $dateTime;
     /**
      * @var CashPaymentFactory
      */
@@ -91,6 +94,7 @@ class OrderSenderService
      * @param Logger                      $logger
      * @param OrderNotificationRepository $notificationRepository
      * @param SerializerInterface         $serializer
+     * @param DateTime                    $dateTime
      */
     public function __construct(
         OrdersServiceFactory $ordersServiceFactory,
@@ -103,7 +107,8 @@ class OrderSenderService
         ConfigService $configService,
         Logger $logger,
         OrderNotificationRepository $notificationRepository,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        DateTime $dateTime
     ) {
         $this->ordersServiceFactory = $ordersServiceFactory;
         $this->orderFactory = $orderFactory;
@@ -116,6 +121,7 @@ class OrderSenderService
         $this->shippingFactory = $shippingFactory;
         $this->notificationRepository = $notificationRepository;
         $this->serializer = $serializer;
+        $this->dateTime = $dateTime;
     }
 
     /**
@@ -183,53 +189,72 @@ class OrderSenderService
                     $additionalInfo = $orderPayment->getAdditionalInformation();
 
                     if (!isset($additionalInfo['mp_status'])) {
-                        break;
+                        throw new LocalizedException(__('Invalid status'));
                     }
 
                     if ($additionalInfo['mp_status'] !== 'approved') {
-                        break;
+                        throw new LocalizedException(__('Payment not approved'));
                     }
 
                     $amount = $additionalInfo['payment_0_total_amount'];
                     $installments = $additionalInfo['payment_0_installments'];
 
                     $installmentAmount = $amount / $installments;
-                    return $paymentModel->setPaymentID($order->getEntityId())
+                    $paymentModel->setPaymentID($order->getEntityId())
                         ->setVoucherNo($orderPayment->getEntityId())
-                        ->setTransactionDate($order->getUpdatedAt())
+                        ->setTransactionDate($this->dateTime->gmtDate())
                         ->setCardCode('DI')
                         ->setCardPlanCode('1')
                         ->setInstallments($installments)
                         ->setInstallmentAmount($this->configService->round($installmentAmount))
                         ->setPaymentTotal($this->configService->round($orderPayment->getAmountPaid()));
                     break;
-                case 'MPA':
+                case 'MPANew':
                     $additionalInfo = $orderPayment->getAdditionalInformation();
-                    $paymentResponse = null;
-                    if (isset($additionalInfo['paymentResponse'])) {
-                        $paymentResponse = $additionalInfo['paymentResponse'];
+                    if ($additionalInfo['mp_status'] !== 'approved') {
+                        throw new LocalizedException(__('Payment not approved'));
                     }
 
-                    if ($paymentResponse === null && $orderPayment->getAdditionalData()) {
-                        $paymentResponse = $this->serializer->unserialize($orderPayment->getAdditionalData());
+                    $data = $orderPayment->getAdditionalData();
+                    if ($data === null) {
+                        throw new LocalizedException(__('Payment without response'));
                     }
+                    $additionalData = $this->serializer->unserialize($data);
 
-                    if ($paymentResponse['status'] !== 'approved') {
-                        break;
-                    }
-
-                    $amount = isset($additionalInfo['amount']) ? $additionalInfo['amount'] : $paymentResponse['transaction_amount'];
-                    $installments = isset($additionalInfo['installments']) ? $additionalInfo['installments'] : $paymentResponse['installments'];
+                    $amount = $additionalData['transaction_amount'];
+                    $installments = $additionalData['installments'];
 
                     $installmentAmount = $amount / $installments;
-                    return $paymentModel->setPaymentID($order->getEntityId())
-                        ->setVoucherNo($paymentResponse['authorization_code'])
-                        ->setTransactionDate($order->getUpdatedAt())
+                    $paymentModel->setPaymentID($order->getEntityId())
+                        ->setVoucherNo($additionalData['authorization_code'])
+                        ->setTransactionDate($additionalData['money_release_date'])
                         ->setCardCode('DI')
                         ->setCardPlanCode('1')
                         ->setInstallments($installments)
                         ->setInstallmentAmount($this->configService->round($installmentAmount))
                         ->setPaymentTotal($this->configService->round($orderPayment->getAmountPaid()));
+                    break;
+                case 'MPA': // Legacy
+                    $additionalInfo = $orderPayment->getAdditionalInformation();
+                    $paymentResponse = $additionalInfo['paymentResponse'];
+
+                    if ($paymentResponse['status'] !== 'approved') {
+                        break;
+                    }
+
+                    $installments = $additionalInfo['installments'];
+                    $installmentAmount = $additionalInfo['amount'] / $installments;
+                    $paymentModel->setPaymentID($order->getEntityId())
+                        ->setVoucherNo($paymentResponse['authorization_code'])
+                        ->setTransactionDate($paymentResponse['money_release_date'])
+                        ->setCardCode('DI')
+                        ->setCardPlanCode('1')
+                        ->setInstallments($installments)
+                        ->setInstallmentAmount($this->configService->round($installmentAmount))
+                        // Eventualmente, MP muestra un amount paid menor o mayor al total, y en la integracion con
+                        // Tango eso no es viable
+                        ->setPaymentTotal($this->configService->round($orderPayment->getAmountPaid()));
+                    break;
             }
             return $paymentModel;
         }
