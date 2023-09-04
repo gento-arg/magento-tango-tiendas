@@ -1,7 +1,7 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2022 Todos los derechos reservados
+ * @copyright GENTo 2023 Todos los derechos reservados
  */
 
 declare (strict_types = 1);
@@ -26,7 +26,7 @@ class OrderPlugin
     protected $productRepository;
 
     /**
-     * @param SearchCriteriaBuilder      $searchCriteriaBuilder
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param ProductRepositoryInterface $productRepository
      */
     public function __construct(
@@ -38,8 +38,10 @@ class OrderPlugin
     }
 
     /**
-     * @param OrderInterface       $subject
+     * @param OrderInterface $subject
      * @param OrderItemInterface[] $items
+     *
+     * @return OrderItemInterface[][]
      */
     public function beforeSetItems(
         OrderInterface $subject,

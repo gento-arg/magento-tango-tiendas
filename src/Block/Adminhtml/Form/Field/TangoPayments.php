@@ -1,7 +1,7 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2022 Todos los derechos reservados
+ * @copyright GENTo 2023 Todos los derechos reservados
  */
 
 declare (strict_types = 1);
@@ -25,8 +25,6 @@ class TangoPayments extends AbstractField
         ['id' => 'A09', 'name' => 'Forma de cobro Web API 09'],
         ['id' => 'A10', 'name' => 'Forma de cobro Web API 10'],
         ['id' => 'MPA', 'name' => 'MercadoPago Argentina'],
-        ['id' => 'MPANew', 'name' => 'MercadoPago Argentina (Adb Payment CC)'],
-        ['id' => 'MPAPro', 'name' => 'MercadoPago Argentina (CheckoutPro)'],
         ['id' => 'PPA', 'name' => 'PayPal Argentina'],
         ['id' => 'PUA', 'name' => 'PayU Argentina'],
         ['id' => 'TPA', 'name' => 'Todo Pago Argentina'],

@@ -2,13 +2,15 @@
 <!--
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2022 Todos los derechos reservados
+ * @copyright GENTo 2023 Todos los derechos reservados
  */
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Gento\TangoTiendas\Api\Data\OrderNotificationInterface"
                 type="Gento\TangoTiendas\Model\OrderNotification" />
+    <preference for="Gento\TangoTiendas\Api\OrderSenderServiceInterface"
+                type="Gento\TangoTiendas\Service\OrderSenderService" />
     <type name="Magento\Framework\Console\CommandListInterface">
         <arguments>
             <argument name="commands" xsi:type="array">
@@ -66,5 +68,18 @@
     <type name="Magento\Sales\Api\Data\InvoiceInterface">
         <plugin name="Gento\TangoTiendas\Plugin\Model\Sales\InvoicePlugin"
                 type="Gento\TangoTiendas\Plugin\Model\Sales\InvoicePlugin" disabled="false" />
+    </type>
+    <type name="Gento\TangoTiendas\Api\OrderSenderServiceInterface">
+        <arguments>
+            <argument name="paymentMethodProcessors" xsi:type="array">
+                <item name="mercadoPagoProcessorCC" xsi:type="object">Gento\TangoTiendas\Service\OrderSenderService\MercadoPagoCCPaymentProcessor</item>
+                <item name="mercadoPagoProcessorPro" xsi:type="object">Gento\TangoTiendas\Service\OrderSenderService\MercadoPagoProPaymentProcessor</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Sales\Model\Order\Payment\State\CaptureCommand">
+        <plugin name="Gento\TangoTiendas\Plugin\Model\Sales\Payment\CaptureCommand\MercadoPagoCCPlugin"
+                type="Gento\TangoTiendas\Plugin\Model\Sales\Payment\CaptureCommand\MercadoPagoCCPlugin" />
     </type>
 </config>
