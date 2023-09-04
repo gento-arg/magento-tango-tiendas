@@ -6,7 +6,7 @@
 
 declare (strict_types = 1);
 
-namespace Gento\TangoTiendas\Plugin\Model\Sales;
+namespace Gento\TangoTiendas\Plugin\Model\Sales\Payment\CaptureCommand;
 
 use Gento\TangoTiendas\Service\OrderSenderService;
 use Gento\TangoTiendas\Service\OrderSenderServiceFactory;
