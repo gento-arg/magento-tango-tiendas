@@ -18,7 +18,7 @@ use Magento\Sales\Model\Order\Payment\State\CaptureCommand;
 use MercadoPago\AdbPayment\Gateway\Config\ConfigCc;
 use MercadoPago\AdbPayment\Gateway\Config\ConfigCheckoutPro;
 
-class InvoicePlugin
+class MercadoPagoCCPlugin
 {
     /**
      * @var OrderSenderServiceFactory
