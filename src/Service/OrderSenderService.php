@@ -185,6 +185,9 @@ class OrderSenderService implements OrderSenderServiceInterface
             return null;
         };
         $paymentMapData = $findPayment($orderPayment->getMethod());
+        if (!$paymentMapData) {
+            return null;
+        }
 
         $code = $paymentMapData['code'];
         $type = $paymentMapData['type'];
@@ -244,6 +247,7 @@ class OrderSenderService implements OrderSenderServiceInterface
         try {
             $orderModel = $this->getOrderModel($order);
             $jsonData = json_encode($orderModel->jsonSerialize(), JSON_PRETTY_PRINT);
+            die($jsonData);
             $this->notificationRepository->addNotification($order, $jsonData);
             $this->logger->info($jsonData);
             $notification = $orderService->sendOrder($orderModel);

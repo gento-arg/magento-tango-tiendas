@@ -60,6 +60,7 @@ class MercadoPagoCCPaymentProcessor implements PaymentMethodProcessorInterface
         }
 
         $data = $orderPayment->getAdditionalData();
+        $this->logger->info(sprintf('[MPCc] Order #%s additionalData', $order->getIncrementId()), [$data]);
         if ($data === null) {
             throw new LocalizedException(__('Payment without response'));
         }

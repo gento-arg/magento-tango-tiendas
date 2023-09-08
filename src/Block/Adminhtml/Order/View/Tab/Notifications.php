@@ -35,10 +35,10 @@ class Notifications extends Template implements TabInterface
     private Collection $collection;
 
     /**
-     * @param Context    $context
-     * @param Registry   $registry
+     * @param Context $context
+     * @param Registry $registry
      * @param Collection $collection
-     * @param array      $data
+     * @param array $data
      */
     public function __construct(
         Context $context,
@@ -69,6 +69,9 @@ class Notifications extends Template implements TabInterface
         return $this->getTabClass();
     }
 
+    /**
+     * @return \Magento\Framework\Api\Search\DocumentInterface[]|\Magento\Framework\DataObject[]
+     */
     public function getFullHistory()
     {
         if ($this->_items === null) {
