@@ -247,7 +247,6 @@ class OrderSenderService implements OrderSenderServiceInterface
         try {
             $orderModel = $this->getOrderModel($order);
             $jsonData = json_encode($orderModel->jsonSerialize(), JSON_PRETTY_PRINT);
-            die($jsonData);
             $this->notificationRepository->addNotification($order, $jsonData);
             $this->logger->info($jsonData);
             $notification = $orderService->sendOrder($orderModel);
