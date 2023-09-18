@@ -61,5 +61,6 @@ class PricesImportCommand extends Command
         $this->state->setAreaCode(Area::AREA_CRONTAB);
         $this->syncCommand->setOutput($output);
         $this->syncCommand->execute();
+        return 0;
     }
 }

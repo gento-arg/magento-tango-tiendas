@@ -8,8 +8,8 @@ declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Plugin\Model\Sales\Payment\CaptureCommand;
 
-use Gento\TangoTiendas\Service\OrderSenderService;
-use Gento\TangoTiendas\Service\OrderSenderServiceFactory;
+use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterface;
+use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterfaceFactory;
 use Magento\Framework\Phrase;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
@@ -21,15 +21,15 @@ use MercadoPago\AdbPayment\Gateway\Config\ConfigCheckoutPro;
 class MercadoPagoCCPlugin
 {
     /**
-     * @var OrderSenderServiceFactory
+     * @var QueueOrderSenderServiceInterfaceFactory
      */
     protected $orderSenderServiceFactory;
 
     /**
-     * @param OrderSenderServiceFactory $orderSenderServiceFactory
+     * @param QueueOrderSenderServiceInterfaceFactory $orderSenderServiceFactory
      */
     public function __construct(
-        OrderSenderServiceFactory $orderSenderServiceFactory
+        QueueOrderSenderServiceInterfaceFactory $orderSenderServiceFactory
     ) {
         $this->orderSenderServiceFactory = $orderSenderServiceFactory;
     }
@@ -59,7 +59,7 @@ class MercadoPagoCCPlugin
             return;
         }
 
-        /** @var OrderSenderService $orderSender */
+        /** @var QueueOrderSenderServiceInterface $orderSender */
         $orderSender = $this->orderSenderServiceFactory->create();
         $orderSender->sendOrder($order);
     }

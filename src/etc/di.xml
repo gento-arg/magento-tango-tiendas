@@ -11,6 +11,8 @@
                 type="Gento\TangoTiendas\Model\OrderNotification" />
     <preference for="Gento\TangoTiendas\Api\OrderSenderServiceInterface"
                 type="Gento\TangoTiendas\Service\OrderSenderService" />
+    <preference for="Gento\TangoTiendas\Api\QueueOrderSenderServiceInterface"
+                type="Gento\TangoTiendas\Queue\Sender\OrderNotification" />
     <type name="Magento\Framework\Console\CommandListInterface">
         <arguments>
             <argument name="commands" xsi:type="array">
@@ -20,6 +22,8 @@
                       xsi:type="object">Gento\TangoTiendas\Console\PricesImportCommand</item>
                 <item name="gentoTangoTiendasOrderSender"
                       xsi:type="object">Gento\TangoTiendas\Console\OrderSenderCommand</item>
+                <item name="gentoTangoTiendasOrderQueue"
+                      xsi:type="object">Gento\TangoTiendas\Console\OrderQueueCommand</item>
             </argument>
         </arguments>
     </type>

@@ -54,5 +54,6 @@ class StockImportCommand extends Command
     {
         $this->state->setAreaCode(Area::AREA_CRONTAB);
         $this->syncCommand->execute();
+        return 0;
     }
 }

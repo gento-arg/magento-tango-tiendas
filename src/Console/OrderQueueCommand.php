@@ -8,7 +8,7 @@ declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Console;
 
-use Gento\TangoTiendas\Service\OrderSenderService;
+use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Area;
 use Magento\Framework\App\State;
@@ -18,26 +18,26 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class OrderSenderCommand extends Command
+class OrderQueueCommand extends Command
 {
     /**
      * @var State
      */
     private $state;
-    private OrderSenderService $senderService;
+    private QueueOrderSenderServiceInterface $senderService;
     private OrderRepository $orderRepository;
     private SearchCriteriaBuilder $searchCriteriaBuilder;
 
     /**
      * @param State $state
-     * @param OrderSenderService $senderService
+     * @param QueueOrderSenderServiceInterface $senderService
      * @param OrderRepository $orderRepository
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param string|null $name
      */
     public function __construct(
         State $state,
-        OrderSenderService $senderService,
+        QueueOrderSenderServiceInterface $senderService,
         OrderRepository $orderRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         string $name = null
@@ -54,13 +54,13 @@ class OrderSenderCommand extends Command
      */
     protected function configure()
     {
-        $this->setName('tangotiendas:order:send')
-            ->setDescription('Send orders to tango.')
+        $this->setName('tangotiendas:order:queue')
+            ->setDescription('Queue orders to process on cron.')
             ->addOption(
                 'order_id',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                __('Order IDs')
+                __('Order Increment IDs')
             );
 
         parent::configure();
@@ -81,7 +81,6 @@ class OrderSenderCommand extends Command
             $orders = $this->orderRepository->getList($searchCriteria);
             foreach ($orders->getItems() as $order) {
                 $this->senderService->sendOrder($order);
-                $this->orderRepository->save($order);
             }
         } catch (\Exception $e) {
             $output->writeln(__('An error has occured: %1', $e->getMessage()));

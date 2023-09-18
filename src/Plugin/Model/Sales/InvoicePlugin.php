@@ -8,19 +8,19 @@ declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Plugin\Model\Sales;
 
-use Gento\TangoTiendas\Service\OrderSenderService;
-use Gento\TangoTiendas\Service\OrderSenderServiceFactory;
+use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterface;
+use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterfaceFactory;
 use Magento\Sales\Api\Data\InvoiceInterface;
 
 class InvoicePlugin
 {
     /**
-     * @var OrderSenderServiceFactory
+     * @var QueueOrderSenderServiceInterfaceFactory
      */
     protected $orderSenderServiceFactory;
 
     public function __construct(
-        OrderSenderServiceFactory $orderSenderServiceFactory
+        QueueOrderSenderServiceInterfaceFactory $orderSenderServiceFactory
     ) {
         $this->orderSenderServiceFactory = $orderSenderServiceFactory;
     }
@@ -35,7 +35,7 @@ class InvoicePlugin
     ) {
         $order = $subject->getOrder();
 
-        /** @var OrderSenderService $orderSender */
+        /** @var QueueOrderSenderServiceInterface $orderSender */
         $orderSender = $this->orderSenderServiceFactory->create();
         $orderSender->sendOrder($order);
     }

@@ -63,6 +63,10 @@ class MercadoPagoProPaymentProcessor implements PaymentMethodProcessorInterface
             throw new LocalizedException(__('Payment not approved'));
         }
 
+        if (!isset($additionalInfo['payment_0_total_amount'])) {
+            throw new LocalizedException(__('Payment information not found'));
+        }
+
         $amount = $additionalInfo['payment_0_total_amount'];
         $installments = $additionalInfo['payment_0_installments'];
 
