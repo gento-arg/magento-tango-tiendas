@@ -36,11 +36,15 @@ class OrderNotification implements QueueOrderSenderServiceInterface
      */
     public function sendOrder(OrderInterface $order)
     {
-        $this->logger->info(__('Trying to queue order: %1', $order->getIncrementId()));
+        $this->logger->info(__(
+            'Trying to queue order: %1 (%2)',
+            $order->getIncrementId(),
+            $order->getId()
+        ));
         try {
             $this->publisher->publish(self::TOPIC_NAME, $order->getId());
         } catch (Exception $e) {
-            $this->logger->error($e->getMessage());
+            $this->logger->error($e->getMessage(), $e->getTrace());
         }
     }
 }

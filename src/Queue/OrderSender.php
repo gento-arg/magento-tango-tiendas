@@ -37,5 +37,6 @@ class OrderSender
     {
         $order = $this->orderRepository->get($orderId);
         $this->orderSenderService->sendOrder($order);
+        $this->orderRepository->save($order);
     }
 }
