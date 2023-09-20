@@ -1,7 +1,7 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2022 Todos los derechos reservados
+ * @copyright GENTo 2023 Todos los derechos reservados
  */
 
 declare (strict_types = 1);
@@ -54,5 +54,6 @@ class StockImportCommand extends Command
     {
         $this->state->setAreaCode(Area::AREA_CRONTAB);
         $this->syncCommand->execute();
+        return 0;
     }
 }

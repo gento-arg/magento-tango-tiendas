@@ -1,21 +1,21 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2022 Todos los derechos reservados
+ * @copyright GENTo 2023 Todos los derechos reservados
  */
 
 declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Service;
 
+use Gento\TangoTiendas\Api\OrderSenderService\PaymentMethodProcessorInterface;
+use Gento\TangoTiendas\Api\OrderSenderServiceInterface;
 use Gento\TangoTiendas\Block\Adminhtml\Form\Field\PaymentTypes;
 use Gento\TangoTiendas\Logger\Logger;
 use Gento\TangoTiendas\Model\OrderNotificationRepository;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Sales\Api\Data\OrderInterface;
-use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Item;
 use Mugar\CustomerIdentificationDocument\Api\Data\CidFieldsInterface;
@@ -35,7 +35,7 @@ use TangoTiendas\Model\ShippingFactory;
 use TangoTiendas\Service\Orders;
 use TangoTiendas\Service\OrdersFactory as OrdersServiceFactory;
 
-class OrderSenderService
+class OrderSenderService implements OrderSenderServiceInterface
 {
     /**
      * @var OrdersServiceFactory
@@ -69,6 +69,10 @@ class OrderSenderService
     protected SerializerInterface $serializer;
     protected DateTime $dateTime;
     /**
+     * @var PaymentMethodProcessorInterface[]
+     */
+    protected array $paymentMethodProcessors;
+    /**
      * @var CashPaymentFactory
      */
     private $cashpaymentFactory;
@@ -83,18 +87,19 @@ class OrderSenderService
     private OrderNotificationRepository $notificationRepository;
 
     /**
-     * @param OrdersServiceFactory        $ordersServiceFactory
-     * @param OrderFactory                $orderFactory
-     * @param CashPaymentFactory          $cashpaymentFactory
-     * @param PaymentFactory              $paymentFactory
-     * @param OrderItemFactory            $orderItemFactory
-     * @param CustomerFactory             $customerFactory
-     * @param ShippingFactory             $shippingFactory
-     * @param ConfigService               $configService
-     * @param Logger                      $logger
+     * @param OrdersServiceFactory $ordersServiceFactory
+     * @param OrderFactory $orderFactory
+     * @param CashPaymentFactory $cashpaymentFactory
+     * @param PaymentFactory $paymentFactory
+     * @param OrderItemFactory $orderItemFactory
+     * @param CustomerFactory $customerFactory
+     * @param ShippingFactory $shippingFactory
+     * @param ConfigService $configService
+     * @param Logger $logger
      * @param OrderNotificationRepository $notificationRepository
-     * @param SerializerInterface         $serializer
-     * @param DateTime                    $dateTime
+     * @param SerializerInterface $serializer
+     * @param DateTime $dateTime
+     * @param PaymentMethodProcessorInterface[] $paymentMethodProcessors
      */
     public function __construct(
         OrdersServiceFactory $ordersServiceFactory,
@@ -108,7 +113,8 @@ class OrderSenderService
         Logger $logger,
         OrderNotificationRepository $notificationRepository,
         SerializerInterface $serializer,
-        DateTime $dateTime
+        DateTime $dateTime,
+        array $paymentMethodProcessors = []
     ) {
         $this->ordersServiceFactory = $ordersServiceFactory;
         $this->orderFactory = $orderFactory;
@@ -122,16 +128,13 @@ class OrderSenderService
         $this->notificationRepository = $notificationRepository;
         $this->serializer = $serializer;
         $this->dateTime = $dateTime;
+        $this->paymentMethodProcessors = $paymentMethodProcessors;
     }
 
     /**
-     * @param TangoOrder $orderModel
-     * @param Item       $orderItem
-     *
-     * @throws ModelException
-     * @return void
+     * @inheritdoc
      */
-    public function addOrderItem($orderModel, $orderItem)
+    public function addOrderItem(TangoOrder $orderModel, Item $orderItem)
     {
         $parentItem = $orderItem;
         if ($orderItem->getParentItem() && $orderItem->getParentItem()->getProductType() !== 'bundle') {
@@ -161,15 +164,31 @@ class OrderSenderService
     }
 
     /**
-     * @param Order                 $order
-     * @param OrderPaymentInterface $orderPayment
-     * @param array                 $paymentMapData
-     *
-     * @throws ModelException
-     * @return CashPayment|Payment
+     * @inheritdoc
      */
-    public function getPaymentModel(Order $order, OrderPaymentInterface $orderPayment, $paymentMapData)
+    public function getPaymentModel(Order $order)
     {
+        $orderPayment = $order->getPayment();
+        foreach ($this->paymentMethodProcessors as $processor) {
+            $paymentModel = $processor->process($order, $orderPayment);
+            if ($paymentModel !== null) {
+                return $paymentModel;
+            }
+        }
+
+        $paymentMatrix = $this->configService->getCodeMapPayment();
+        $findPayment = function ($paymentCode) use ($paymentMatrix) {
+            foreach ($paymentMatrix as $paymentData) {
+                if ($paymentData['payment'] == $paymentCode)
+                    return $paymentData;
+            }
+            return null;
+        };
+        $paymentMapData = $findPayment($orderPayment->getMethod());
+        if (!$paymentMapData) {
+            return null;
+        }
+
         $code = $paymentMapData['code'];
         $type = $paymentMapData['type'];
 
@@ -185,55 +204,6 @@ class OrderSenderService
             /** @var Payment $paymentModel */
             $paymentModel = $this->paymentFactory->create();
             switch ($code) {
-                case 'MPAPro':
-                    $additionalInfo = $orderPayment->getAdditionalInformation();
-
-                    if (!isset($additionalInfo['mp_status'])) {
-                        throw new LocalizedException(__('Invalid status'));
-                    }
-
-                    if ($additionalInfo['mp_status'] !== 'approved') {
-                        throw new LocalizedException(__('Payment not approved'));
-                    }
-
-                    $amount = $additionalInfo['payment_0_total_amount'];
-                    $installments = $additionalInfo['payment_0_installments'];
-
-                    $installmentAmount = $amount / $installments;
-                    $paymentModel->setPaymentID($order->getEntityId())
-                        ->setVoucherNo($orderPayment->getEntityId())
-                        ->setTransactionDate($this->dateTime->gmtDate())
-                        ->setCardCode('DI')
-                        ->setCardPlanCode('1')
-                        ->setInstallments($installments)
-                        ->setInstallmentAmount($this->configService->round($installmentAmount))
-                        ->setPaymentTotal($this->configService->round($orderPayment->getAmountPaid()));
-                    break;
-                case 'MPANew':
-                    $additionalInfo = $orderPayment->getAdditionalInformation();
-                    if ($additionalInfo['mp_status'] !== 'approved') {
-                        throw new LocalizedException(__('Payment not approved'));
-                    }
-
-                    $data = $orderPayment->getAdditionalData();
-                    if ($data === null) {
-                        throw new LocalizedException(__('Payment without response'));
-                    }
-                    $additionalData = $this->serializer->unserialize($data);
-
-                    $amount = $additionalData['transaction_amount'];
-                    $installments = $additionalData['installments'];
-
-                    $installmentAmount = $amount / $installments;
-                    $paymentModel->setPaymentID($order->getEntityId())
-                        ->setVoucherNo($additionalData['authorization_code'])
-                        ->setTransactionDate($additionalData['money_release_date'])
-                        ->setCardCode('DI')
-                        ->setCardPlanCode('1')
-                        ->setInstallments($installments)
-                        ->setInstallmentAmount($this->configService->round($installmentAmount))
-                        ->setPaymentTotal($this->configService->round($orderPayment->getAmountPaid()));
-                    break;
                 case 'MPA': // Legacy
                     $additionalInfo = $orderPayment->getAdditionalInformation();
                     $paymentResponse = $additionalInfo['paymentResponse'];
@@ -262,6 +232,9 @@ class OrderSenderService
         return null;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function sendOrder(OrderInterface $order)
     {
         /** @var Orders $orderService */
@@ -328,25 +301,12 @@ class OrderSenderService
             }
         }
 
-        $paymentMatrix = $this->configService->getCodeMapPayment();
-        $findPayment = function ($paymentCode) use ($paymentMatrix) {
-            foreach ($paymentMatrix as $paymentData) {
-                if ($paymentData['payment'] == $paymentCode)
-                    return $paymentData;
-            }
-            return null;
-        };
-
-        $orderPayment = $order->getPayment();
-        $paymentMapData = $findPayment($orderPayment->getMethod());
-        if ($paymentMapData !== null) {
-            $paymentModel = $this->getPaymentModel($order, $orderPayment, $paymentMapData);
-            if ($paymentModel instanceof CashPayment) {
-                $orderModel->addCashPayment($paymentModel);
-            }
-            if ($paymentModel instanceof Payment) {
-                $orderModel->addPayment($paymentModel);
-            }
+        $paymentModel = $this->getPaymentModel($order);
+        if ($paymentModel instanceof CashPayment) {
+            $orderModel->addCashPayment($paymentModel);
+        }
+        if ($paymentModel instanceof Payment) {
+            $orderModel->addPayment($paymentModel);
         }
 
         /** @var Shipping $shipping */

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @author    Manuel Cánepa <manuel@gento.com.ar>
+ * @copyright GENTo 2023 Todos los derechos reservados
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework-message-queue:etc/topology.xsd">
+    <exchange name="magento">
+        <binding id="tangotiendas.orders" topic="tangotiendas.orders" destination="tangotiendas.orders" destinationType="queue"/>
+    </exchange>
+</config>

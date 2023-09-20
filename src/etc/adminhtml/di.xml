@@ -2,7 +2,7 @@
 <!--
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2022 Todos los derechos reservados
+ * @copyright GENTo 2023 Todos los derechos reservados
  */
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -22,7 +22,6 @@
     </virtualType>
     <type name="Magento\Sales\Block\Adminhtml\Order\View">
         <plugin name="Gento\TangoTiendas\Plugin\Sales\Block\Adminhtml\Order\View\AddResendButtonPlugin"
-                type="Gento\TangoTiendas\Plugin\Sales\Block\Adminhtml\Order\View\AddResendButtonPlugin"
-                disabled="true" />
+                type="Gento\TangoTiendas\Plugin\Sales\Block\Adminhtml\Order\View\AddResendButtonPlugin" />
     </type>
 </config>

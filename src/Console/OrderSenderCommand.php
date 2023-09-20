@@ -1,7 +1,7 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2022 Todos los derechos reservados
+ * @copyright GENTo 2023 Todos los derechos reservados
  */
 
 declare (strict_types = 1);
@@ -9,6 +9,7 @@ declare (strict_types = 1);
 namespace Gento\TangoTiendas\Console;
 
 use Gento\TangoTiendas\Service\OrderSenderService;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Area;
 use Magento\Framework\App\State;
 use Magento\Sales\Model\OrderRepository;
@@ -16,7 +17,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Magento\Framework\Api\SearchCriteriaBuilder;
 
 class OrderSenderCommand extends Command
 {
@@ -29,11 +29,11 @@ class OrderSenderCommand extends Command
     private SearchCriteriaBuilder $searchCriteriaBuilder;
 
     /**
-     * @param State                 $state
-     * @param OrderSenderService    $senderService
-     * @param OrderRepository       $orderRepository
+     * @param State $state
+     * @param OrderSenderService $senderService
+     * @param OrderRepository $orderRepository
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
-     * @param string|null           $name
+     * @param string|null $name
      */
     public function __construct(
         State $state,
@@ -74,21 +74,19 @@ class OrderSenderCommand extends Command
         $orderIds = $input->getOption('order_id');
 
         $this->state->setAreaCode(Area::AREA_CRONTAB);
-        foreach ($orderIds as $incrementId) {
-            $searchCriteria = $this->searchCriteriaBuilder
-                ->addFilter('increment_id', $incrementId)->create();
+        $searchCriteria = $this->searchCriteriaBuilder
+            ->addFilter('increment_id', $orderIds, 'in')->create();
 
-            try {
-                $orders = $this->orderRepository->getList($searchCriteria);
-                foreach ($orders->getItems() as $order) {
-                    $this->senderService->sendOrder($order);
-                    $this->orderRepository->save($order);
-                }
-            } catch (\Exception $e) {
-                $output->writeln(__('An error has occured: %1', $e->getMessage()));
+        try {
+            $orders = $this->orderRepository->getList($searchCriteria);
+            foreach ($orders->getItems() as $order) {
+                $this->senderService->sendOrder($order);
+                $this->orderRepository->save($order);
             }
+        } catch (\Exception $e) {
+            $output->writeln(__('An error has occured: %1', $e->getMessage()));
+            return 1;
         }
-//        $this->syncCommand->setOutput($output);
-//        $this->syncCommand->execute();
+        return 0;
     }
 }
