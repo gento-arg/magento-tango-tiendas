@@ -58,7 +58,7 @@ class OrderSender
             ->addFilter(OrderInterface::INCREMENT_ID, $incrementId)
             ->create();
         $orders = $this->orderRepository->getList($criteria)->getItems();
-        return count($orders) ? $orders[0] : null;
+        return count($orders) ? array_shift($orders) : null;
     }
 
 }
