@@ -7,11 +7,13 @@
 declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Block\Adminhtml\Form\Field;
-
+/**
+ * List of payment types
+ */
 class PaymentTypes extends AbstractField
 {
-    const TYPE_CASH_PAYMENT = 'cashpayment';
-    const TYPE_PAYMENT = 'payment';
+    public const TYPE_CASH_PAYMENT = 'cashpayment';
+    public const TYPE_PAYMENT = 'payment';
     /**
      * @var array
      */
