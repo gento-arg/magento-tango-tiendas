@@ -18,6 +18,7 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\ProgressBarFactory;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -38,11 +39,6 @@ class Sync
      * @var PricesFactory
      */
     protected $pricesServiceFactory;
-
-    /**
-     * @var PriceListsFactory
-     */
-    protected $pricesListServiceFactory;
 
     /**
      * @var SearchCriteriaBuilder
@@ -68,6 +64,7 @@ class Sync
      * @var LoggerInterface
      */
     protected $logger;
+    protected ProductRepositoryInterfaceFactory $productRepositoryFactory;
     /**
      * @var ProductTierPriceInterfaceFactory
      */
@@ -88,20 +85,18 @@ class Sync
     /**
      * Sync constructor.
      *
-     * @param PricesFactory                     $pricesServiceFactory
-     * @param PriceListsFactory                 $pricesListServiceFactory
-     * @param SearchCriteriaBuilder             $searchCriteriaBuilder
-     * @param ScopeConfigInterface              $scopeConfigInterface
-     * @param StoreManagerInterface             $storeManager
-     * @param GroupRepositoryInterface          $groupRepository
+     * @param PricesFactory $pricesServiceFactory
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param ScopeConfigInterface $scopeConfigInterface
+     * @param StoreManagerInterface $storeManager
+     * @param GroupRepositoryInterface $groupRepository
      * @param ProductRepositoryInterfaceFactory $productRepositoryFactory
-     * @param Logger                            $logger
-     * @param ProductTierPriceInterfaceFactory  $productTierPriceInterfaceFactory
-     * @param ProgressBarFactory                $barFactory
+     * @param Logger $logger
+     * @param ProductTierPriceInterfaceFactory $productTierPriceInterfaceFactory
+     * @param ProgressBarFactory $barFactory
      */
     public function __construct(
         PricesFactory $pricesServiceFactory,
-        PriceListsFactory $pricesListServiceFactory,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         ScopeConfigInterface $scopeConfigInterface,
         StoreManagerInterface $storeManager,
@@ -112,7 +107,6 @@ class Sync
         ProgressBarFactory $barFactory
     ) {
         $this->pricesServiceFactory = $pricesServiceFactory;
-        $this->pricesListServiceFactory = $pricesListServiceFactory;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->scopeConfig = $scopeConfigInterface;
         $this->storeManager = $storeManager;
@@ -180,27 +174,10 @@ class Sync
                 $idxToken + 1,
                 count($tokens)
             ));
-            /** @var Prices */
+            /** @var Prices $service */
             $service = $this->pricesServiceFactory->create([
                 'accessToken' => $token,
             ]);
-            /** @var PriceLists */
-            $listService = $this->pricesListServiceFactory->create([
-                'accessToken' => $token,
-            ]);
-
-            $priceLists = [];
-
-            /** @var PagingResult $data */
-            $page = 1;
-            $this->logger->info(__('Proccesing token: %1', $this->getMaskedToken($token)));
-            do {
-                $data = $listService->getList(500, $page++);
-                /** @var PriceList $item */
-                foreach ($data->getData() as $item) {
-                    $priceLists[] = $item;
-                }
-            } while ($data->hasMoreData());
 
             $updated = $processed = 0;
             $page = 1;

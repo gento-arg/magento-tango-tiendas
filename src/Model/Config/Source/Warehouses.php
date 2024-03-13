@@ -12,6 +12,7 @@ use Gento\TangoTiendas\Service\ConfigService;
 use Magento\Framework\Data\OptionSourceInterface;
 use Magento\Framework\Message\ManagerInterface;
 use TangoTiendas\Exceptions\ClientException;
+use TangoTiendas\Service\Warehouses as WarehousesService;
 use TangoTiendas\Service\WarehousesFactory;
 
 class Warehouses implements OptionSourceInterface
@@ -54,7 +55,7 @@ class Warehouses implements OptionSourceInterface
                 return $opts;
             }
 
-            /** @var \TangoTiendas\Service\Warehouse $warehouseService */
+            /** @var WarehousesService $warehouseService */
             $warehouseService = $this->warehouseServiceFactory->create([
                 'accessToken' => $this->configService->getApiToken(),
             ]);

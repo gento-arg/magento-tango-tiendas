@@ -10,6 +10,7 @@ namespace Gento\TangoTiendas\Plugin\Model\Sales\Payment\CaptureCommand;
 
 use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterface;
 use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterfaceFactory;
+use Gento\TangoTiendas\Logger\Logger;
 use Magento\Framework\Phrase;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
@@ -24,14 +25,18 @@ class MercadoPagoCCPlugin
      * @var QueueOrderSenderServiceInterfaceFactory
      */
     protected $orderSenderServiceFactory;
+    protected Logger $logger;
 
     /**
      * @param QueueOrderSenderServiceInterfaceFactory $orderSenderServiceFactory
+     * @param Logger $logger
      */
     public function __construct(
-        QueueOrderSenderServiceInterfaceFactory $orderSenderServiceFactory
+        QueueOrderSenderServiceInterfaceFactory $orderSenderServiceFactory,
+        Logger $logger
     ) {
         $this->orderSenderServiceFactory = $orderSenderServiceFactory;
+        $this->logger = $logger;
     }
 
     /**
@@ -50,6 +55,14 @@ class MercadoPagoCCPlugin
         $amount,
         OrderInterface $order
     ) {
+        $this->logger->info(__(
+            'After execute %1 %2 (%3) State: %4, Payment Method: %5',
+            self::class,
+            $order->getIncrementId(),
+            $order->getId(),
+            $order->getState(),
+            $payment->getMethod()
+        ));
         if ($order->getState() !== Order::STATE_PROCESSING) {
             return;
         }

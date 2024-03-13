@@ -60,6 +60,8 @@ class Sync
      * @var LoggerInterface
      */
     protected $logger;
+    protected SourceItemsSaveInterface $sourceItemsSaveInterface;
+    protected SourceItemInterfaceFactory $sourceItemFactory;
 
     public function __construct(
         StocksFactory $stocksServiceFactory,

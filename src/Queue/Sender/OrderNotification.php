@@ -42,7 +42,7 @@ class OrderNotification implements QueueOrderSenderServiceInterface
             $order->getId()
         ));
         try {
-            $this->publisher->publish(self::TOPIC_NAME, $order->getId());
+            $this->publisher->publish(self::TOPIC_NAME, $order->getIncrementId());
         } catch (Exception $e) {
             $this->logger->error($e->getMessage(), $e->getTrace());
         }

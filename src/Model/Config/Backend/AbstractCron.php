@@ -22,23 +22,23 @@ use Magento\Framework\Registry;
 
 abstract class AbstractCron extends Value
 {
-    const CRON_FREQUENCY_PATH = '';
-    const CRON_STRING_PATH = '';
-    const CRON_TIME_PATH = '';
+    public const CRON_FREQUENCY_PATH = '';
+    public const CRON_STRING_PATH = '';
+    public const CRON_TIME_PATH = '';
     /**
      * @var ValueFactory
      */
     protected $_configValueFactory;
 
     /**
-     * @param Context              $context
-     * @param Registry             $registry
+     * @param Context $context
+     * @param Registry $registry
      * @param ScopeConfigInterface $config
-     * @param TypeListInterface    $cacheTypeList
-     * @param ValueFactory         $configValueFactory
-     * @param AbstractResource     $resource
-     * @param AbstractDb           $resourceCollection
-     * @param array                $data
+     * @param TypeListInterface $cacheTypeList
+     * @param ValueFactory $configValueFactory
+     * @param AbstractResource $resource
+     * @param AbstractDb $resourceCollection
+     * @param array $data
      */
     public function __construct(
         Context $context,

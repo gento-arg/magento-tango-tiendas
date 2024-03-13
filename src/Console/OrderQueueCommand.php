@@ -60,7 +60,7 @@ class OrderQueueCommand extends Command
                 'order_id',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                __('Order Increment IDs')
+                (string) __('Order Increment IDs')
             );
 
         parent::configure();

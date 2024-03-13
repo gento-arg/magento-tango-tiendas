@@ -72,6 +72,7 @@ class OrderSenderService implements OrderSenderServiceInterface
      * @var PaymentMethodProcessorInterface[]
      */
     protected array $paymentMethodProcessors;
+    protected ConfigService $configService;
     /**
      * @var CashPaymentFactory
      */
