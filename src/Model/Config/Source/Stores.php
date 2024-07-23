@@ -14,6 +14,9 @@ use Magento\Framework\Message\ManagerInterface;
 use TangoTiendas\Exceptions\ClientException;
 use TangoTiendas\Service\StoresFactory;
 
+/**
+ *
+ */
 class Stores implements OptionSourceInterface
 {
     /**
@@ -31,6 +34,11 @@ class Stores implements OptionSourceInterface
      */
     protected $messageManager;
 
+    /**
+     * @param StoresFactory $storesServiceFactory
+     * @param ConfigService $configService
+     * @param ManagerInterface $messageManager
+     */
     public function __construct(
         StoresFactory $storesServiceFactory,
         ConfigService $configService,
@@ -41,6 +49,9 @@ class Stores implements OptionSourceInterface
         $this->messageManager = $messageManager;
     }
 
+    /**
+     * @return array|array[]
+     */
     public function toOptionArray()
     {
         $opts = [

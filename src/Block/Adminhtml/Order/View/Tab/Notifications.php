@@ -24,14 +24,14 @@ class Notifications extends Template implements TabInterface
      */
     protected $_template = 'Gento_TangoTiendas::order/view/tab/notifications.phtml';
 
-    protected $_items;
+    protected $items;
 
     /**
      * Core registry
      *
      * @var Registry
      */
-    protected $_coreRegistry = null;
+    protected $coreRegistry = null;
     private Collection $collection;
 
     /**
@@ -46,7 +46,7 @@ class Notifications extends Template implements TabInterface
         Collection $collection,
         array $data = []
     ) {
-        $this->_coreRegistry = $registry;
+        $this->coreRegistry = $registry;
         parent::__construct($context, $data);
         $this->collection = $collection;
     }
@@ -74,10 +74,10 @@ class Notifications extends Template implements TabInterface
      */
     public function getFullHistory()
     {
-        if ($this->_items === null) {
-            $this->_items = $this->collection->addFilter('order_id', $this->getOrder()->getId())->getItems();
+        if ($this->items === null) {
+            $this->items = $this->collection->addFilter('order_id', $this->getOrder()->getId())->getItems();
         }
-        return $this->_items;
+        return $this->items;
     }
 
     /**
@@ -87,7 +87,7 @@ class Notifications extends Template implements TabInterface
      */
     public function getOrder()
     {
-        return $this->_coreRegistry->registry('current_order');
+        return $this->coreRegistry->registry('current_order');
     }
 
     /**

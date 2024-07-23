@@ -26,5 +26,4 @@ class System extends Base
      * @var string
      */
     protected $fileName = '/var/log/tangotiendas.log';
-
 }

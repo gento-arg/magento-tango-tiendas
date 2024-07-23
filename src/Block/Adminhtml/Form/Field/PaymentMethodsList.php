@@ -19,9 +19,9 @@ class PaymentMethodsList extends AbstractField
     private $paymentHelper;
 
     /**
-     * @param Context     $context
+     * @param Context $context
      * @param paymentData $paymentHelper
-     * @param array       $data
+     * @param array $data
      */
     public function __construct(
         Context $context,

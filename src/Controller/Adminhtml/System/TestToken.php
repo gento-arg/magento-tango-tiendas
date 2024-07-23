@@ -8,8 +8,10 @@ declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Controller\Adminhtml\System;
 
+use Exception;
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
+use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Psr\Log\LoggerInterface;
 use TangoTiendas\Service\StoresFactory;
@@ -22,6 +24,7 @@ class TestToken extends Action
      * @var StoresFactory
      */
     protected $storesServiceFactory;
+    protected LoggerInterface $logger;
 
     /**
      * @param Context $context
@@ -59,12 +62,12 @@ class TestToken extends Action
                 $status = __('Please complete the token');
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $status = $e->getMessage();
             $this->logger->critical($e);
         }
 
-        /** @var \Magento\Framework\Controller\Result\Json $result */
+        /** @var Json $result */
         $result = $this->resultJsonFactory->create();
 
         return $result->setData([
