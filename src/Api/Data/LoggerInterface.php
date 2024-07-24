@@ -6,10 +6,11 @@
 
 declare (strict_types = 1);
 
-namespace Gento\TangoTiendas\Logger;
+namespace Gento\TangoTiendas\Api\Data;
 
-use Gento\TangoTiendas\Api\Data\LoggerInterface;
-
-class Logger extends \Monolog\Logger implements LoggerInterface
+/**
+ * Logger interface
+ */
+interface LoggerInterface extends \Psr\Log\LoggerInterface
 {
 }

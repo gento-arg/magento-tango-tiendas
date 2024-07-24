@@ -1,7 +1,7 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2023 Todos los derechos reservados
+ * @copyright GENTo (https://gento.com.ar) Todos los derechos reservados
  */
 
 declare (strict_types = 1);
@@ -17,7 +17,7 @@ use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Event\ManagerInterface as EventManagerInterface;
 use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 use Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection as DbAbstractCollection;
-use Psr\Log\LoggerInterface;
+use Gento\TangoTiendas\Api\Data\LoggerInterface;
 
 abstract class AbstractCollection extends DbAbstractCollection implements SearchResultInterface
 {

@@ -1,7 +1,7 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2023 Todos los derechos reservados
+ * @copyright GENTo (https://gento.com.ar) Todos los derechos reservados
  */
 
 declare (strict_types = 1);
@@ -10,7 +10,6 @@ namespace Gento\TangoTiendas\Plugin\Model\Sales\Payment\CaptureCommand;
 
 use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterface;
 use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterfaceFactory;
-use Gento\TangoTiendas\Logger\Logger;
 use Magento\Framework\Phrase;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
@@ -18,6 +17,7 @@ use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Payment\State\CaptureCommand;
 use MercadoPago\AdbPayment\Gateway\Config\ConfigCc;
 use MercadoPago\AdbPayment\Gateway\Config\ConfigCheckoutPro;
+use Gento\TangoTiendas\Api\Data\LoggerInterface;
 
 class MercadoPagoCCPlugin
 {
@@ -25,15 +25,15 @@ class MercadoPagoCCPlugin
      * @var QueueOrderSenderServiceInterfaceFactory
      */
     protected $orderSenderServiceFactory;
-    protected Logger $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @param QueueOrderSenderServiceInterfaceFactory $orderSenderServiceFactory
-     * @param Logger $logger
+     * @param LoggerInterface $logger
      */
     public function __construct(
         QueueOrderSenderServiceInterfaceFactory $orderSenderServiceFactory,
-        Logger $logger
+        LoggerInterface $logger
     ) {
         $this->orderSenderServiceFactory = $orderSenderServiceFactory;
         $this->logger = $logger;

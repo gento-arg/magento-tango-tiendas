@@ -1,7 +1,7 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2023 Todos los derechos reservados
+ * @copyright GENTo (https://gento.com.ar) Todos los derechos reservados
  */
 
 declare (strict_types = 1);
@@ -10,22 +10,22 @@ namespace Gento\TangoTiendas\Queue\Sender;
 
 use Exception;
 use Gento\TangoTiendas\Api\QueueOrderSenderServiceInterface;
-use Gento\TangoTiendas\Logger\Logger;
 use Magento\Framework\MessageQueue\PublisherInterface;
 use Magento\Sales\Api\Data\OrderInterface;
+use Gento\TangoTiendas\Api\Data\LoggerInterface;
 
 class OrderNotification implements QueueOrderSenderServiceInterface
 {
     protected PublisherInterface $publisher;
-    protected Logger $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @param PublisherInterface $publisher
-     * @param Logger $logger
+     * @param LoggerInterface $logger
      */
     public function __construct(
         PublisherInterface $publisher,
-        Logger $logger
+        LoggerInterface $logger
     ) {
         $this->publisher = $publisher;
         $this->logger = $logger;

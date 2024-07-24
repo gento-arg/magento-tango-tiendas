@@ -1,7 +1,7 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2023 Todos los derechos reservados
+ * @copyright GENTo (https://gento.com.ar) Todos los derechos reservados
  */
 
 declare (strict_types = 1);
@@ -11,7 +11,6 @@ namespace Gento\TangoTiendas\Service;
 use Gento\TangoTiendas\Api\OrderSenderService\PaymentMethodProcessorInterface;
 use Gento\TangoTiendas\Api\OrderSenderServiceInterface;
 use Gento\TangoTiendas\Block\Adminhtml\Form\Field\PaymentTypes;
-use Gento\TangoTiendas\Logger\Logger;
 use Gento\TangoTiendas\Model\OrderNotificationRepository;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\Stdlib\DateTime\DateTime;
@@ -19,6 +18,7 @@ use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Item;
 use Mugar\CustomerIdentificationDocument\Api\Data\CidFieldsInterface;
+use Gento\TangoTiendas\Api\Data\LoggerInterface;
 use TangoTiendas\Exceptions\ModelException;
 use TangoTiendas\Model\CashPayment;
 use TangoTiendas\Model\CashPaymentFactory;
@@ -57,10 +57,7 @@ class OrderSenderService implements OrderSenderServiceInterface
      */
     protected $customerFactory;
 
-    /**
-     * @var Logger
-     */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @var string[]
@@ -96,7 +93,7 @@ class OrderSenderService implements OrderSenderServiceInterface
      * @param CustomerFactory $customerFactory
      * @param ShippingFactory $shippingFactory
      * @param ConfigService $configService
-     * @param Logger $logger
+     * @param LoggerInterface $logger
      * @param OrderNotificationRepository $notificationRepository
      * @param SerializerInterface $serializer
      * @param DateTime $dateTime
@@ -111,7 +108,7 @@ class OrderSenderService implements OrderSenderServiceInterface
         CustomerFactory $customerFactory,
         ShippingFactory $shippingFactory,
         ConfigService $configService,
-        Logger $logger,
+        LoggerInterface $logger,
         OrderNotificationRepository $notificationRepository,
         SerializerInterface $serializer,
         DateTime $dateTime,
@@ -247,10 +244,12 @@ class OrderSenderService implements OrderSenderServiceInterface
 
         try {
             $orderModel = $this->getOrderModel($order);
+            $this->logger->info(__('Formatted json data: %1', $order->getIncrementId()));
             $jsonData = json_encode($orderModel->jsonSerialize(), JSON_PRETTY_PRINT);
             $this->notificationRepository->addNotification($order, $jsonData);
-            $this->logger->info($jsonData);
+            $this->logger->info(__('Add notification: %1', $order->getIncrementId()), ['message' => $jsonData]);
             $notification = $orderService->sendOrder($orderModel);
+            $this->logger->info(__('Send notification: %1', $order->getIncrementId()));
             $message = $notification->getMessage();
             $this->logger->info(var_export($notification, true));
         } catch (\Exception $e) {

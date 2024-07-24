@@ -1,7 +1,7 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2023 Todos los derechos reservados
+ * @copyright GENTo (https://gento.com.ar) Todos los derechos reservados
  */
 
 declare (strict_types = 1);
@@ -15,7 +15,7 @@ use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Model\Order;
 use MercadoPago\AdbPayment\Gateway\Config\ConfigCc;
-use Psr\Log\LoggerInterface;
+use Gento\TangoTiendas\Api\Data\LoggerInterface;
 use TangoTiendas\Model\PaymentFactory;
 
 class MercadoPagoCCPaymentProcessor implements PaymentMethodProcessorInterface

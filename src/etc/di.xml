@@ -2,7 +2,7 @@
 <!--
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2023 Todos los derechos reservados
+ * @copyright GENTo (https://gento.com.ar) Todos los derechos reservados
  */
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -13,6 +13,8 @@
                 type="Gento\TangoTiendas\Service\OrderSenderService" />
     <preference for="Gento\TangoTiendas\Api\QueueOrderSenderServiceInterface"
                 type="Gento\TangoTiendas\Queue\Sender\OrderNotification" />
+    <preference for="Gento\TangoTiendas\Api\Data\LoggerInterface"
+                type="GentoTangoTiendasLogger" />
     <type name="Magento\Framework\Console\CommandListInterface">
         <arguments>
             <argument name="commands" xsi:type="array">
@@ -27,23 +29,59 @@
             </argument>
         </arguments>
     </type>
-
-    <type name="Gento\TangoTiendas\Logger\Handler\System">
+    <virtualType name="GentoTangoTiendasLoggerHandler" type="Magento\Framework\Logger\Handler\Base">
         <arguments>
-            <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
-        </arguments>
-    </type>
-    <type name="Gento\TangoTiendas\Logger\Handler">
-        <arguments>
-            <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
-        </arguments>
-    </type>
-    <type name="Gento\TangoTiendas\Logger\Logger">
+            <argument name="fileName" xsi:type="string">/var/log/tangotiendas.log</argument>
+         </arguments>
+    </virtualType>
+    <virtualType name="GentoTangoTiendasLogger" type="Gento\TangoTiendas\Logger\Logger">
         <arguments>
             <argument name="name" xsi:type="string">tangotiendas</argument>
             <argument name="handlers" xsi:type="array">
-                <item name="system" xsi:type="object">Gento\TangoTiendas\Logger\Handler\System</item>
+                <item name="system" xsi:type="object">GentoTangoTiendasLoggerHandler</item>
             </argument>
+         </arguments>
+    </virtualType>
+    <virtualType name="GentoTangoTiendasSyncLogger" type="Gento\TangoTiendas\Logger\Logger">
+        <arguments>
+            <argument name="name" xsi:type="string">tangotiendas-sync</argument>
+            <argument name="handlers" xsi:type="array">
+                <item name="system" xsi:type="object">GentoTangoTiendasLoggerHandler</item>
+            </argument>
+         </arguments>
+    </virtualType>
+    <virtualType name="GentoTangoTiendasMPLogger" type="Gento\TangoTiendas\Logger\Logger">
+        <arguments>
+            <argument name="name" xsi:type="string">tangotiendas-mp</argument>
+            <argument name="handlers" xsi:type="array">
+                <item name="system" xsi:type="object">GentoTangoTiendasLoggerHandler</item>
+            </argument>
+         </arguments>
+    </virtualType>
+
+    <type name="Gento\TangoTiendas\Model\Cron\Stock\Sync">
+        <arguments>
+            <argument name="logger" xsi:type="object">GentoTangoTiendasSyncLogger</argument>
+        </arguments>
+    </type>
+    <type name="Gento\TangoTiendas\Model\Cron\Prices\Sync">
+        <arguments>
+            <argument name="logger" xsi:type="object">GentoTangoTiendasSyncLogger</argument>
+        </arguments>
+    </type>
+    <type name="Gento\TangoTiendas\Plugin\Model\Sales\Payment\CaptureCommand\MercadoPagoCCPlugin">
+        <arguments>
+            <argument name="logger" xsi:type="object">GentoTangoTiendasMPLogger</argument>
+        </arguments>
+    </type>
+    <type name="Gento\TangoTiendas\Service\OrderSenderService\MercadoPagoProPaymentProcessor">
+        <arguments>
+            <argument name="logger" xsi:type="object">GentoTangoTiendasMPLogger</argument>
+        </arguments>
+    </type>
+    <type name="Gento\TangoTiendas\Service\OrderSenderService\MercadoPagoCCPaymentProcessor">
+        <arguments>
+            <argument name="logger" xsi:type="object">GentoTangoTiendasMPLogger</argument>
         </arguments>
     </type>
 

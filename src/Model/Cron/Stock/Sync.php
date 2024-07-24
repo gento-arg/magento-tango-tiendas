@@ -1,14 +1,13 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2023 Todos los derechos reservados
+ * @copyright GENTo (https://gento.com.ar) Todos los derechos reservados
  */
 
 declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Model\Cron\Stock;
 
-use Gento\TangoTiendas\Logger\Logger;
 use Magento\Catalog\Api\ProductRepositoryInterfaceFactory;
 use Magento\Cron\Model\Schedule;
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -17,6 +16,7 @@ use Magento\InventoryApi\Api\Data\SourceItemInterfaceFactory;
 use Magento\InventoryApi\Api\SourceItemsSaveInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Gento\TangoTiendas\Api\Data\LoggerInterface;
 use TangoTiendas\Service\ProductsFactory;
 use TangoTiendas\Service\StocksFactory;
 
@@ -56,10 +56,7 @@ class Sync
      */
     protected $storeManager;
 
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
+    protected LoggerInterface $logger;
     protected SourceItemsSaveInterface $sourceItemsSaveInterface;
     protected SourceItemInterfaceFactory $sourceItemFactory;
 
@@ -72,7 +69,7 @@ class Sync
         SourceItemInterfaceFactory $sourceItemFactory,
         ScopeConfigInterface $scopeConfigInterface,
         StoreManagerInterface $storeManager,
-        Logger $logger
+        LoggerInterface $logger
     ) {
         $this->stocksServiceFactory = $stocksServiceFactory;
         $this->productServiceFactory = $productServiceFactory;
@@ -83,6 +80,41 @@ class Sync
         $this->scopeConfig = $scopeConfigInterface;
         $this->storeManager = $storeManager;
         $this->logger = $logger;
+    }
+
+    protected function getParsedKits($token)
+    {
+        /** @var \TangoTiendas\Service\Products $service */
+        $service = $this->productServiceFactory->create([
+            'accessToken' => $token,
+        ]);
+
+        $kits = [];
+        $page = 1;
+        do {
+            /** @var \TangoTiendas\Model\PagingResult $result */
+            $result = $service->getList(500, $page);
+            foreach ($result->getData() as /** @var \TangoTiendas\Model\Product */ $kitItem) {
+                if (!$kitItem->isKit()) {
+                    continue;
+                }
+                array_map(function ($row) use (&$kits, $kitItem) {
+                    $componentSku = $row->getComponentSKUCode();
+                    $kitSku = $kitItem->getSKUCode();
+                    $qty = $row->getQuantity();
+
+                    if (!isset($kits[$kitSku])) {
+                        $kits[$kitSku] = [];
+                    }
+
+                    $kits[$kitSku][$componentSku] = $qty;
+                }, $kitItem->getProductComposition());
+            }
+
+            $page++;
+        } while ($result->hasMoreData());
+
+        return $kits;
     }
 
     public function execute(Schedule $schedule = null)
@@ -277,41 +309,6 @@ class Sync
         }
 
         return $response;
-    }
-
-    protected function getParsedKits($token)
-    {
-        /** @var \TangoTiendas\Service\Products $service */
-        $service = $this->productServiceFactory->create([
-            'accessToken' => $token,
-        ]);
-
-        $kits = [];
-        $page = 1;
-        do {
-            /** @var \TangoTiendas\Model\PagingResult $result */
-            $result = $service->getList(500, $page);
-            foreach ($result->getData() as /** @var \TangoTiendas\Model\Product */ $kitItem) {
-                if (!$kitItem->isKit()) {
-                    continue;
-                }
-                array_map(function ($row) use (&$kits, $kitItem) {
-                    $componentSku = $row->getComponentSKUCode();
-                    $kitSku = $kitItem->getSKUCode();
-                    $qty = $row->getQuantity();
-
-                    if (!isset($kits[$kitSku])) {
-                        $kits[$kitSku] = [];
-                    }
-
-                    $kits[$kitSku][$componentSku] = $qty;
-                }, $kitItem->getProductComposition());
-            }
-
-            $page++;
-        } while ($result->hasMoreData());
-
-        return $kits;
     }
 
     private function getConfig($path, $websiteId)

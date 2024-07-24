@@ -1,14 +1,13 @@
 <?php
 /**
  * @author    Manuel Cánepa <manuel@gento.com.ar>
- * @copyright GENTo 2023 Todos los derechos reservados
+ * @copyright GENTo (https://gento.com.ar) Todos los derechos reservados
  */
 
 declare (strict_types = 1);
 
 namespace Gento\TangoTiendas\Model\Cron\Prices;
 
-use Gento\TangoTiendas\Logger\Logger;
 use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterfaceFactory;
 use Magento\Cron\Model\Schedule;
@@ -18,23 +17,20 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Psr\Log\LoggerInterface;
+use Gento\TangoTiendas\Api\Data\LoggerInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\ProgressBarFactory;
 use Symfony\Component\Console\Output\OutputInterface;
 use TangoTiendas\Model\PagingResult;
 use TangoTiendas\Model\Price;
-use TangoTiendas\Model\PriceList;
-use TangoTiendas\Service\PriceLists;
-use TangoTiendas\Service\PriceListsFactory;
 use TangoTiendas\Service\Prices;
 use TangoTiendas\Service\PricesFactory;
 
 class Sync
 {
-    const CONFIG_ACTIVE_PATH = 'tango/gento_tangotiendas/active';
-    const CONFIG_PRICES_ENABLE_PATH = 'tango/gento_tangotiendas/import_prices/enabled';
-    const CONFIG_TOKEN_PATH = 'tango/gento_tangotiendas/api_token';
+    public const CONFIG_ACTIVE_PATH = 'tango/gento_tangotiendas/active';
+    public const CONFIG_PRICES_ENABLE_PATH = 'tango/gento_tangotiendas/import_prices/enabled';
+    public const CONFIG_TOKEN_PATH = 'tango/gento_tangotiendas/api_token';
     /**
      * @var PricesFactory
      */
@@ -60,10 +56,8 @@ class Sync
      */
     protected $groupRepository;
 
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
+    protected LoggerInterface $logger;
+
     protected ProductRepositoryInterfaceFactory $productRepositoryFactory;
     /**
      * @var ProductTierPriceInterfaceFactory
@@ -91,7 +85,7 @@ class Sync
      * @param StoreManagerInterface $storeManager
      * @param GroupRepositoryInterface $groupRepository
      * @param ProductRepositoryInterfaceFactory $productRepositoryFactory
-     * @param Logger $logger
+     * @param LoggerInterface $logger
      * @param ProductTierPriceInterfaceFactory $productTierPriceInterfaceFactory
      * @param ProgressBarFactory $barFactory
      */
@@ -102,7 +96,7 @@ class Sync
         StoreManagerInterface $storeManager,
         GroupRepositoryInterface $groupRepository,
         ProductRepositoryInterfaceFactory $productRepositoryFactory,
-        Logger $logger,
+        LoggerInterface $logger,
         ProductTierPriceInterfaceFactory $productTierPriceInterfaceFactory,
         ProgressBarFactory $barFactory
     ) {
